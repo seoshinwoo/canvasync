@@ -2,3 +2,4 @@ canvasync/obj
 canvasync.Client/obj
 canvasync/bin
 canvasync.Client/bin
+*.DS_Store

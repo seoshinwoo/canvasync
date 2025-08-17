@@ -60,6 +60,14 @@
               "target": "Package",
               "version": "[9.0.7, )",
               "autoReferenced": true
+            },
+            "SkiaSharp": {
+              "target": "Package",
+              "version": "[3.119.0, )"
+            },
+            "SkiaSharp.Views.Blazor": {
+              "target": "Package",
+              "version": "[3.119.0, )"
             }
           },
           "imports": [

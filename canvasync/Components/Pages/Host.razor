@@ -1,0 +1,84 @@
+@rendermode InteractiveServer
+@page "/host"
+@using PDFtoImage
+
+<h1>Host Page</h1>
+
+<InputFile OnChange="HandleFileSelection" />
+<button @onclick="GenerateAddress">주소 생성</button>
+
+@if (IsConverting)
+{
+    <p>변환 중... 잠시만 기다려주세요.</p>
+}
+
+@if (imageUrls != null && imageUrls.Count > 0)
+{
+    <h3>변환된 이미지</h3>
+    <div class="image-container">
+        @foreach (var imageUrl in imageUrls)
+        {
+            <img src="@imageUrl" class="converted-image" />
+        }
+    </div>
+}
+
+@code
+{
+    private string _address = string.Empty;
+    private List<string> imageUrls = new();
+    private bool IsConverting = false;
+
+    private void GenerateAddress()
+    {
+        // _address = 
+    }
+
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        imageUrls?.Clear();
+        IsConverting = true;
+
+        var file = e.File;
+        var maxFileSize = 50 * 1024 * 1024;
+
+        if (file.Size > maxFileSize)
+        {
+            return;
+        }
+
+        try
+        {
+            using (var stream = file.OpenReadStream(maxFileSize))
+            using (var ms = new MemoryStream())
+            {
+                await stream.CopyToAsync(ms);
+                var pdfBytes = ms.ToArray();
+
+                var images = PDFtoImage.Conversion.ToImages(pdfBytes);
+
+                imageUrls = new List<string>();
+
+                foreach (var img in images)
+                {
+                    var streamImage = new MemoryStream();
+                    img.Encode(streamImage, SkiaSharp.SKEncodedImageFormat.Png, 80);
+
+                    // Base64 문자열로 인코딩하여 Data URL 생성
+                    var base64String = Convert.ToBase64String(streamImage.ToArray());
+                    var dataUrl = $"data:image/png;base64, {base64String}";
+
+                    imageUrls.Add(dataUrl);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"파일 변환 중 오류 발생 : {ex.Message}");
+        }
+        finally
+        {
+            IsConverting = false;
+        }
+    }
+}

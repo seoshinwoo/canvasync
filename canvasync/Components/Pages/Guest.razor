@@ -1,0 +1,16 @@
+@rendermode InteractiveServer
+@page "/guest"
+
+<h1>Guest Page</h1>
+
+주소 입력 : <input @bind="_address"/>
+<button @onclick = "Enter">입장</button>
+
+@code
+{
+    private string _address = string.Empty;
+    private void Enter()
+    {
+        // 입장
+    }
+}

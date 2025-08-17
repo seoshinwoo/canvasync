@@ -1,7 +1,32 @@
-﻿@page "/"
+﻿@rendermode InteractiveServer
+@page "/"
 
-<PageTitle>Home</PageTitle>
+@* <button @onclick="HostPage">Host</button>
+<button @onclick="GuestPage">Guest</button> *@
+<DynamicComponent Type="selectedType" />
 
-<h1>Hello, world!</h1>
+@code
+{
+    private readonly Dictionary<string, Type> components = new()
+    {
+        ["Main"] = typeof(Main),
+        ["Host"] = typeof(Host),
+        ["Guest"] = typeof(Guest),
+    };
 
-Welcome to your new app.
+    private Type? selectedType;
+    protected override void OnInitialized() =>
+        selectedType = components["Main"];
+
+    private void GuestPage()
+    {
+        Console.WriteLine("Guest!!");
+        selectedType = components["Guest"];
+    }
+
+    private void HostPage()
+    {
+        Console.WriteLine("Host!!");
+        selectedType = components["Host"];
+    }
+}

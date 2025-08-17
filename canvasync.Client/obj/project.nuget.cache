@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "p2qgpiebzRQ=",
+  "dgSpecHash": "vzych0RdSI8=",
   "success": true,
   "projectFilePath": "/Users/ssw/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
   "expectedPackageFiles": [
@@ -29,6 +29,11 @@
     "/Users/ssw/.nuget/packages/microsoft.jsinterop.webassembly/9.0.6/microsoft.jsinterop.webassembly.9.0.6.nupkg.sha512",
     "/Users/ssw/.nuget/packages/microsoft.net.illink.tasks/9.0.6/microsoft.net.illink.tasks.9.0.6.nupkg.sha512",
     "/Users/ssw/.nuget/packages/microsoft.net.sdk.webassembly.pack/9.0.7/microsoft.net.sdk.webassembly.pack.9.0.7.nupkg.sha512",
+    "/Users/ssw/.nuget/packages/skiasharp/3.119.0/skiasharp.3.119.0.nupkg.sha512",
+    "/Users/ssw/.nuget/packages/skiasharp.nativeassets.macos/3.119.0/skiasharp.nativeassets.macos.3.119.0.nupkg.sha512",
+    "/Users/ssw/.nuget/packages/skiasharp.nativeassets.webassembly/3.119.0/skiasharp.nativeassets.webassembly.3.119.0.nupkg.sha512",
+    "/Users/ssw/.nuget/packages/skiasharp.nativeassets.win32/3.119.0/skiasharp.nativeassets.win32.3.119.0.nupkg.sha512",
+    "/Users/ssw/.nuget/packages/skiasharp.views.blazor/3.119.0/skiasharp.views.blazor.3.119.0.nupkg.sha512",
     "/Users/ssw/.nuget/packages/microsoft.netcore.app.ref/9.0.7/microsoft.netcore.app.ref.9.0.7.nupkg.sha512"
   ],
   "logs": []

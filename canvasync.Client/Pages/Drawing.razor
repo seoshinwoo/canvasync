@@ -1,5 +1,6 @@
 @page "/drawing"
-
+@rendermode InteractiveWebAssembly
+@inject HttpClient HttpClient
 
 <div class="page-layout">
     <!-- 상단 -->
@@ -41,6 +42,19 @@
 @code
 {
     // private MemberType _memberType;
+    private List<string> _imgUrls = new();
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _imgUrls = await HttpClient.GetFromJsonAsync<List<string>>("api/pdfimages") ?? new List<string>();
+            Console.WriteLine($"_imgUrls.Count : {_imgUrls.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
+        }
+    }
 
 }
 

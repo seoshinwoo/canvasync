@@ -1,33 +1,49 @@
 @rendermode InteractiveServer
 @page "/host"
 @using PDFtoImage
+@using canvasync.Client.Pages
+@inject Containers.StateContainer StateContainer
 
-<h1>Host Page</h1>
-
-<InputFile OnChange="HandleFileSelection" />
-<button @onclick="GenerateAddress">주소 생성</button>
-
-@if (IsConverting)
-{
-    <p>변환 중... 잠시만 기다려주세요.</p>
-}
-
-@if (imageUrls != null && imageUrls.Count > 0)
-{
-    <h3>변환된 이미지</h3>
-    <div class="image-container">
-        @foreach (var imageUrl in imageUrls)
-        {
-            <img src="@imageUrl" class="converted-image" />
-        }
-    </div>
-}
+<div style="color: whitesmoke; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+    
+    @if (!IsConverting)
+    {
+        <label for="file-input" class="btn-custom-style">
+            파일 선택 📂
+        </label>
+        <InputFile id="file-input" OnChange="HandleFileSelection" style="display: none;" />
+    }
+    else if (!IsConvertingDone)
+    {
+        <p>변환 중... 잠시만 기다려주세요.</p>
+    }
+    else
+    {
+        @* <h3>변환된 이미지</h3>
+        <div class="image-container">
+            @foreach (var imageUrl in imageUrls)
+            {
+                <img src="@imageUrl" class="converted-image" />
+            }
+        </div> *@
+        <div>@_fileName</div>
+        <div>변환 완료!!</div>
+        <div>
+            <button @onclick="SelectNewFile">다른 파일 선택</button>
+        </div>
+        <button class="goto-canvas-btn" @onclick="StartPresentation">
+            프레젠테이션 시작하기
+        </button>
+    }
+</div>
 
 @code
 {
     private string _address = string.Empty;
+    private string _fileName = string.Empty;
     private List<string> imageUrls = new();
     private bool IsConverting = false;
+    private bool IsConvertingDone = false;
 
     private void GenerateAddress()
     {
@@ -40,6 +56,7 @@
         IsConverting = true;
 
         var file = e.File;
+        _fileName = file.Name;
         var maxFileSize = 50 * 1024 * 1024;
 
         if (file.Size > maxFileSize)
@@ -70,6 +87,8 @@
 
                     imageUrls.Add(dataUrl);
                 }
+
+                StateContainer.imageUrls = imageUrls;
             }
         }
         catch (Exception ex)
@@ -78,7 +97,63 @@
         }
         finally
         {
-            IsConverting = false;
+            // IsConverting = false;
+            IsConvertingDone = true;
         }
     }
+
+    private void SelectNewFile()
+    {
+        IsConverting = false;
+        IsConvertingDone = false;
+        StateHasChanged();
+    }
+
+    private void StartPresentation()
+    {
+        StateContainer.SetComponent(typeof(Drawing));
+    }
 }
+
+<style>
+    /* 새로 만드는 커스텀 버튼 스타일 */
+    .btn-custom-style {
+        /* 원하는 배경색과 글자색 지정 */
+        background-color: #5A4FCF; /* 예: 보라색 계열 */
+        color: white;
+        border: none; /* 테두리 제거 */
+
+        /* 버튼 크기 키우기 (padding과 font-size 조절) */
+        padding: 15px 30px;
+        font-size: 18px; 
+        font-weight: bold;
+
+        /* 기타 스타일 */
+        border-radius: 8px; /* 모서리 둥글게 */
+        cursor: pointer; /* 마우스 올리면 손가락 모양으로 */
+        transition: background-color 0.2s ease-in-out; /* 부드러운 색상 전환 효과 */
+        
+        /* display와 vertical-align은 label이 인라인 요소처럼 동작하는 것을 방지 */
+        display: inline-block;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    /* 마우스를 올렸을 때 버튼 색상 살짝 어둡게 변경 */
+    .btn-custom-style:hover {
+        background-color: #4B42B3;
+    }
+
+    .goto-canvas-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+</style>

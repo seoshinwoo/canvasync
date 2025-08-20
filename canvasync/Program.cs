@@ -1,5 +1,5 @@
-using canvasync.Client.Pages;
 using canvasync.Components;
+using canvasync.Containers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +9,8 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddSingleton<StateContainer>();
 
 var app = builder.Build();
 

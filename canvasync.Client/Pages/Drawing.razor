@@ -1,12 +1,90 @@
-@using canvasync/Models
 @page "/drawing"
 
 
+<div class="page-layout">
+    <!-- 상단 -->
+    <div class="top">
+        <h3>상단 영역</h3>
+    </div>
 
+    <!-- 가운데 -->
+    <div class="middle">
+        <section class="left">
+            <ul class="slides">
+                @* @for (int i = 0; i < Slides.Count; i++)
+                {
+                    <li class="slide-item" @onclick="() => SelectSlide(i)">
+                        <span class="slide-index">@((i + 1).ToString("D2"))</span>
+                        <div class="thumb @(SelectedIndex == i ? "is-active" : null)">
+                            <img src="@Slides[i]" alt="Slide @(i+1)" loading="lazy" />
+                        </div>
+                    </li>
+                } *@
+            </ul>
+        </section>
+        <section class="center">
+            <h4>가운데 (50%)</h4>
+            <p>메인 콘텐츠</p>
+        </section>
+        <section class="right">
+            <h4>오른쪽 (30%)</h4>
+            <p>보조 패널 / 로그 / 상세 정보</p>
+        </section>
+    </div>
 
+    <!-- 하단 -->
+    <div class="bottom">
+        <small>하단 영역 · © 2025</small>
+    </div>
+</div>
 
 @code
 {
     // private MemberType _memberType;
 
 }
+
+<style>
+.page-layout {
+    height: 90vh;                 /* 화면 전체 높이 */
+    display: flex;
+    flex-direction: column;
+    background: #f7f7f8;
+}
+
+/* 상단/하단 */
+.top, .bottom {
+    padding: 0.75rem 1rem;
+    background: #ffffff;
+    border-block: 1px solid #e7e7ea;
+}
+
+/* 가운데 */
+.middle {
+    flex: 1 1 auto;                /* 남은 공간 모두 차지 */
+    display: grid;
+    @* grid-template-columns: 15% 60% 25%; *@
+    grid-template-columns: 3fr 12fr 5fr;
+    gap: 12px;
+    padding: 12px;
+    min-height: 0;
+}
+
+/* 세 칸 공통 스타일 */
+.left, .center, .right {
+    background: #ffffff;
+    border: 1px solid #e7e7ea;
+    border-radius: 12px;
+    padding: 12px;
+    min-height: 0;
+    overflow: auto; /* 내용이 넘치면 해당 칸만 스크롤 */
+}
+
+/* 좁은 화면 대응: 세로 스택 */
+@* @media (max-width: 960px) {
+    .middle {
+        grid-template-columns: 1fr;
+        grid-auto-rows: minmax(160px, auto);
+    }
+} *@
+</style>

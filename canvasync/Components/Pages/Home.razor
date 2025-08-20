@@ -1,32 +1,103 @@
 ﻿@rendermode InteractiveServer
 @page "/"
+@inject Containers.StateContainer StateContainer
+@implements IDisposable
 
-@* <button @onclick="HostPage">Host</button>
-<button @onclick="GuestPage">Guest</button> *@
-<DynamicComponent Type="selectedType" />
+@if(StateContainer._isHome)
+{
+    <div class="background-container">
+        <div class="top-box">
+            <div class="main-title">
+                CanvaSync
+            </div>
+        </div>
+        <div class="bottom-box">
+            <div class="button-container">
+                <button class="btn-opt" style="@hostBtnStyle" 
+                    @onclick='() => EnterPage("host")'
+                    @onmouseover="HostBtnOnMouseOver" 
+                    @onmouseout="HostBtnOnMouseOut">Host</button>
+
+                <button class="btn-opt"style="@guestBtnStyle" 
+                    @onclick='() => EnterPage("guest")'
+                    @onmouseover="GuestBtnOnMouseOver" 
+                    @onmouseout="GuestBtnOnMouseOut">Guest</button>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <CanvasLayout>
+        @if(currentComponent is not null)
+        {
+            <DynamicComponent Type="currentComponent" />
+        }
+        else
+        {
+            <p>Loading Component..</p>
+        }
+    </CanvasLayout>
+}
 
 @code
 {
-    private readonly Dictionary<string, Type> components = new()
+    private Type? currentComponent;
+    protected override void OnInitialized()
     {
-        ["Main"] = typeof(Main),
-        ["Host"] = typeof(Host),
-        ["Guest"] = typeof(Guest),
-    };
-
-    private Type? selectedType;
-    protected override void OnInitialized() =>
-        selectedType = components["Main"];
-
-    private void GuestPage()
-    {
-        Console.WriteLine("Guest!!");
-        selectedType = components["Guest"];
+        StateContainer.OnChange += ChangeComponent;
     }
 
-    private void HostPage()
+    public void Dispose()
     {
-        Console.WriteLine("Host!!");
-        selectedType = components["Host"];
+        StateContainer.OnChange -= ChangeComponent;
+    }
+    private void EnterPage(string option)
+    {
+        switch (option)
+        {
+            case "host":
+                StateContainer.SetComponent(typeof(Host));
+                break;
+            case "guest":
+                StateContainer.SetComponent(typeof(Guest));
+                break;
+            default:
+                //
+                break;
+        }
+    }
+
+    private async void ChangeComponent()
+    {
+        await InvokeAsync(() =>
+        {
+            currentComponent = StateContainer.ComponentType;
+        });
+
+        StateHasChanged();
+    }
+
+    private string hostBtnStyle = "background-color:#FFB900";
+    private string guestBtnStyle = "background-color: #1E84D9";
+
+    private void HostBtnOnMouseOver()
+    {
+        hostBtnStyle = "background-color: #AD7A02";
+    }
+    
+    private void HostBtnOnMouseOut()
+    {
+        hostBtnStyle = "background-color: #FFB900";
+    }
+
+    private void GuestBtnOnMouseOver()
+    {
+        guestBtnStyle = "background-color: #0E416E";
+    }
+
+    private void GuestBtnOnMouseOut()
+    {
+        guestBtnStyle = "background-color: #1E84D9";
     }
 }

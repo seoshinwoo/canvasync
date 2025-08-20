@@ -58,3 +58,80 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* 여기서부터 내가.. */
+.background-container {
+    width: 100wh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0px;
+    padding: 0px;
+}
+
+.top-box {
+    flex: 7;
+    background-color: #b6d029;
+    display: flex;
+    justify-content: center;
+}
+
+.button-container {
+    width: 300px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bottom-box {
+    flex: 3;
+    background-color: #21241B;
+    display: flex;
+    justify-content: center; /* 가로 중앙 */
+    align-items: center;     /* 세로 중앙 */
+}
+
+.main-title {  
+    align-self: flex-start; /* 세로 정렬은 transform으로 조절 */
+    position: relative;
+    top: 80%; /* 부모 높이의 70% 지점으로 이동 */
+    transform: translateY(-50%); /* 텍스트 높이만큼 중앙 보정 */
+    font-size: 90px;
+    font-weight: 900;
+}
+
+.btn-opt {
+    padding: 15px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-opt:hover {
+    background-color: #45a049;
+}
+
+.layout-top {
+    flex: 1;
+    background-color: lightblue;
+}
+
+.layout-top > div,
+.layout-top > div > .navbar {
+    height: 100%;
+    display: flex;
+    align-items: center; /* Navbar 아이템들을 세로 중앙에 정렬 (선택 사항) */
+}
+
+.layout-middle {
+    flex: 9;
+    background-color: #21241B;
+}
+
+.my-container {
+    width: 100vh;
+    height: 70vh;
+}

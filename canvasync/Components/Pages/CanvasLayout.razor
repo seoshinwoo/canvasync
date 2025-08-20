@@ -1,0 +1,50 @@
+@rendermode InteractiveServer
+@inject Containers.StateContainer StateContainer
+
+<div class="background-container">
+    <div class="layout-top">
+        <nav class="navbar navbar-expand-lg" style="height: 100%; display: flex; align-items: center; background-color: #b6d029; color: #21241B">
+            <div class="container-fluid">
+                <a class="navbar-brand">CanvaSync</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="GoHome">
+                                <span class="oi oi-home" aria-hidden="true"></span> Home
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="counter">
+                                <span class="oi oi-plus" aria-hidden="true"></span>
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="fetchdata">
+                                <span class="oi oi-list-rich" aria-hidden="true"></span>
+                            </NavLink>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <div class="layout-middle">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    // [Parameter] 어트리뷰트를 사용해 MyLayout 컴포넌트의 태그 사이에 오는
+    // 모든 자식 콘텐츠를 이 속성으로 받습니다.
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    private void GoHome()
+    {
+        StateContainer.SetComponent(typeof(Home));
+    }
+    
+}

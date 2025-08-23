@@ -3,6 +3,14 @@ using canvasync.Containers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("ServerAPI", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:5175"); // 서버 주소 고정
+});
+
+builder.Services.AddControllers();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
@@ -39,5 +47,7 @@ app.MapRazorComponents<App>()
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
+
+app.MapControllers();
 
 app.Run();

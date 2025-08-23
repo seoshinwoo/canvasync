@@ -3,6 +3,7 @@
 @using PDFtoImage
 @using canvasync.Client.Pages
 @inject Containers.StateContainer StateContainer
+@inject NavigationManager NavigationManager
 
 <div style="color: whitesmoke; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
     
@@ -111,7 +112,8 @@
 
     private void StartPresentation()
     {
-        StateContainer.SetComponent(typeof(Drawing));
+        //StateContainer.SetComponent(typeof(Drawing));
+        NavigationManager.NavigateTo("/drawing");
     }
 }
 

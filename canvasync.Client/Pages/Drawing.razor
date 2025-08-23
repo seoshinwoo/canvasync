@@ -1,31 +1,37 @@
-@page "/drawing"
+@using SkiaSharp
+@using SkiaSharp.Views.Blazor
+@using Models
 @rendermode InteractiveWebAssembly
+@page "/drawing"
 @inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
 
 <div class="page-layout">
     <!-- 상단 -->
     <div class="top">
         <h3>상단 영역</h3>
+        <button @onclick="async () => await GetImageSizes(_imgUrls)">이미지 크기 계산</button>
     </div>
 
     <!-- 가운데 -->
     <div class="middle">
         <section class="left">
             <ul class="slides">
-                @* @for (int i = 0; i < Slides.Count; i++)
+                @foreach (var page in _pages)
                 {
-                    <li class="slide-item" @onclick="() => SelectSlide(i)">
-                        <span class="slide-index">@((i + 1).ToString("D2"))</span>
-                        <div class="thumb @(SelectedIndex == i ? "is-active" : null)">
-                            <img src="@Slides[i]" alt="Slide @(i+1)" loading="lazy" />
+                    <div class="pdf-preview" @onclick="() => SelectPage(page)">
+                        <div style="width: 70%;">
+                            <img src="@(page.ImgData)" loading="lazy" style="width: 70%;" />
                         </div>
-                    </li>
-                } *@
+                    </div>
+                }
             </ul>
         </section>
         <section class="center">
-            <h4>가운데 (50%)</h4>
-            <p>메인 콘텐츠</p>
+            @* <h4>가운데 (50%)</h4>
+            <p>메인 콘텐츠</p> *@
+            @* <SKCanvasView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" style=@($"border: 1px solid black; width:{_canvasSize.Width}px; height:{_canvasSize.Height}px")  /> *@
+            <img src="@_imgSrc" />
         </section>
         <section class="right">
             <h4>오른쪽 (30%)</h4>
@@ -41,14 +47,28 @@
 
 @code
 {
-    // private MemberType _memberType;
     private List<string> _imgUrls = new();
+    private List<Page> _pages = new();
+    private int SelectedIndex {get; set; }
+    private (int Width, int Height) _canvasSize = new();
+    public record ImgSize(int width, int height);
+    private string _imgSrc = string.Empty;
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _imgUrls = await HttpClient.GetFromJsonAsync<List<string>>("api/pdfimages") ?? new List<string>();
+            _imgUrls = await HttpClient.GetFromJsonAsync<List<string>>("http://localhost:5175/api/pdfimages") ?? new List<string>();
             Console.WriteLine($"_imgUrls.Count : {_imgUrls.Count}");
+            
+            var count = 0;
+            foreach (var imgUrl in _imgUrls)
+            {
+                count++;
+                var page = new Page();
+                page.PageIndex = count;
+                page.ImgData = imgUrl;
+                _pages.Add(page);
+            }
         }
         catch (Exception ex)
         {
@@ -56,6 +76,47 @@
         }
     }
 
+    private async Task GetImageSizes(List<string> datas)
+    {
+        // Example: Initialize with default values
+        @* foreach (var data in datas)
+        {
+            var pdfImage = new PDFImage();
+
+            var size = await JSRuntime.InvokeAsync<(int width, int height)>("getImageSize", datas);
+            pdfImage.Width = size.width;
+            pdfImage.Height = size.height;
+        } *@
+
+        var imgStr = datas[0];
+
+        var pdfImage = new PDFImage();
+
+        var size = await JSRuntime.InvokeAsync<ImgSize>("getImageSize", imgStr);
+        pdfImage.Width = size.width;
+        pdfImage.Height = size.height;
+        Console.WriteLine($"pdfImage Width : {pdfImage.Width}");
+        Console.WriteLine($"pdfImage Height : {pdfImage.Height}");
+
+        _canvasSize.Width = size.width;
+        _canvasSize.Height = size.height;
+    }
+
+    private void OnPaintSurface(SKPaintSurfaceEventArgs e)
+    {
+        var canvas = e.Surface.Canvas;
+    }
+
+    private void SelectPage(Page page)
+    {
+        _imgSrc = page.ImgData;
+    }
+
+    public class PDFImage
+    {
+        public int Width {get; set;}
+        public int Height {get; set;}
+    }
 }
 
 <style>
@@ -101,4 +162,15 @@
         grid-auto-rows: minmax(160px, auto);
     }
 } *@
+
+.pdf-preview {
+    background-color: coral;
+    border: 2px solid black;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.pdf-preview:hover {
+    background-color: brown;
+}
 </style>

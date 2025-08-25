@@ -30,8 +30,8 @@
         <section class="center">
             @* <h4>가운데 (50%)</h4>
             <p>메인 콘텐츠</p> *@
-            @* <SKCanvasView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" style=@($"border: 1px solid black; width:{_canvasSize.Width}px; height:{_canvasSize.Height}px")  /> *@
-            <img src="@_imgSrc" />
+            <SKCanvasView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" class="canvas-size" style=@($"border: 1px solid black;")  />
+            @* <img src="@_imgSrc" /> *@
         </section>
         <section class="right">
             <h4>오른쪽 (30%)</h4>
@@ -49,31 +49,42 @@
 {
     private List<string> _imgUrls = new();
     private List<Page> _pages = new();
-    private int SelectedIndex {get; set; }
+    private Page? _currentPage;
+    private int SelectedIndex { get; set; }
     private (int Width, int Height) _canvasSize = new();
     public record ImgSize(int width, int height);
+    public ImgSize _imgSize = new ImgSize(0, 0);
     private string _imgSrc = string.Empty;
     protected override async Task OnInitializedAsync()
     {
         try
         {
             _imgUrls = await HttpClient.GetFromJsonAsync<List<string>>("http://localhost:5175/api/pdfimages") ?? new List<string>();
-            Console.WriteLine($"_imgUrls.Count : {_imgUrls.Count}");
             
+
+            Console.WriteLine($"_imgUrls.Count : {_imgUrls.Count}");
             var count = 0;
-            foreach (var imgUrl in _imgUrls)
+            var stringLength = 0;
+
+            @* foreach (var imgUrl in _imgUrls)
             {
                 count++;
                 var page = new Page();
                 page.PageIndex = count;
                 page.ImgData = imgUrl;
+                // page.Image = LoadImageFromBase64(imgUrl);
                 _pages.Add(page);
-            }
+            } *@
         }
         catch (Exception ex)
         {
             Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // await GetImageSizes(_imgUrls);
     }
 
     private async Task GetImageSizes(List<string> datas)
@@ -86,30 +97,75 @@
             var size = await JSRuntime.InvokeAsync<(int width, int height)>("getImageSize", datas);
             pdfImage.Width = size.width;
             pdfImage.Height = size.height;
+
+            112384521
+            284941926
         } *@
 
         var imgStr = datas[0];
 
         var pdfImage = new PDFImage();
 
-        var size = await JSRuntime.InvokeAsync<ImgSize>("getImageSize", imgStr);
-        pdfImage.Width = size.width;
-        pdfImage.Height = size.height;
+        var _size = await JSRuntime.InvokeAsync<ImgSize>("getImageSize", imgStr);
+        pdfImage.Width = _size.width;
+        pdfImage.Height = _size.height;
         Console.WriteLine($"pdfImage Width : {pdfImage.Width}");
         Console.WriteLine($"pdfImage Height : {pdfImage.Height}");
 
-        _canvasSize.Width = size.width;
-        _canvasSize.Height = size.height;
+        _canvasSize.Width = _size.width;
+        _canvasSize.Height = _size.height;
     }
 
     private void OnPaintSurface(SKPaintSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
+
+        int canvasWidth = e.Info.Width;
+        int canvasHeight = e.Info.Height;
+
+        @* if (_currentPage is not null)
+        {
+            SKImage? image = _currentPage.Image;
+            int ratio = canvasWidth / _imgSize.width;
+            int yvalue = (canvasHeight - _imgSize.height * ratio) / 2;
+            var rect = new SKRect(0, yvalue, _imgSize.width * ratio, _imgSize.height * ratio);
+            canvas.DrawImage(image, rect);
+        } *@
     }
 
     private void SelectPage(Page page)
     {
         _imgSrc = page.ImgData;
+        _currentPage = page;
+    }
+
+    private SKImage LoadImageFromBase64(string base64)
+    {
+        // 1. data URI prefix 제거
+        if (base64.StartsWith("data:image", StringComparison.OrdinalIgnoreCase))
+        {
+            int commaIndex = base64.IndexOf(',');
+            if (commaIndex >= 0)
+                base64 = base64.Substring(commaIndex + 1);
+        }
+
+        // 2. URL-safe Base64 변환
+        base64 = base64.Replace('-', '+').Replace('_', '/');
+
+        // 3. 공백/개행 제거
+        base64 = base64.Trim();
+
+        // 4. 길이 보정 (4의 배수로 맞춤)
+        int mod4 = base64.Length % 4;
+        if (mod4 > 0)
+        {
+            base64 = base64.PadRight(base64.Length + (4 - mod4), '=');
+        }
+
+        byte[] imageBytes = Convert.FromBase64String(base64);
+
+        using var stream = new SKMemoryStream(imageBytes);
+        return SKImage.FromEncodedData(stream);
     }
 
     public class PDFImage
@@ -121,7 +177,7 @@
 
 <style>
 .page-layout {
-    height: 90vh;                 /* 화면 전체 높이 */
+    height: 100vh;                 /* 화면 전체 높이 */
     display: flex;
     flex-direction: column;
     background: #f7f7f8;
@@ -139,7 +195,7 @@
     flex: 1 1 auto;                /* 남은 공간 모두 차지 */
     display: grid;
     @* grid-template-columns: 15% 60% 25%; *@
-    grid-template-columns: 3fr 12fr 5fr;
+    grid-template-columns: 3fr 13fr 4fr;
     gap: 12px;
     padding: 12px;
     min-height: 0;
@@ -155,13 +211,27 @@
     overflow: auto; /* 내용이 넘치면 해당 칸만 스크롤 */
 }
 
-/* 좁은 화면 대응: 세로 스택 */
-@* @media (max-width: 960px) {
-    .middle {
-        grid-template-columns: 1fr;
-        grid-auto-rows: minmax(160px, auto);
-    }
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@* section.center {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 } *@
+
+section.center > skcanvasview {
+    height: 100%;
+    display: block;
+}
+
+.canvas-size {
+    width: 100%;
+    height: 100%;
+}
 
 .pdf-preview {
     background-color: coral;

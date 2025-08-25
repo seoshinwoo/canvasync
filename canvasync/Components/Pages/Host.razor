@@ -58,7 +58,8 @@
 
         var file = e.File;
         _fileName = file.Name;
-        var maxFileSize = 50 * 1024 * 1024;
+        var maxFileSize = 500 * 1024 * 1024;
+        Console.WriteLine($"file.Size : {file.Size}");
 
         if (file.Size > maxFileSize)
         {

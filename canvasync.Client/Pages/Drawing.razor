@@ -1,6 +1,7 @@
 @using SkiaSharp
 @using SkiaSharp.Views.Blazor
 @using Models
+@using System.Windows.Markup
 @rendermode InteractiveWebAssembly
 @page "/drawing"
 @inject HttpClient HttpClient
@@ -53,7 +54,7 @@
     private int SelectedIndex { get; set; }
     private (int Width, int Height) _canvasSize = new();
     public record ImgSize(int width, int height);
-    public ImgSize _imgSize = new ImgSize(0, 0);
+    public ImgSize? _imgSize;
     private string _imgSrc = string.Empty;
     protected override async Task OnInitializedAsync()
     {
@@ -64,17 +65,16 @@
 
             Console.WriteLine($"_imgUrls.Count : {_imgUrls.Count}");
             var count = 0;
-            var stringLength = 0;
 
-            @* foreach (var imgUrl in _imgUrls)
+            foreach (var imgUrl in _imgUrls)
             {
                 count++;
                 var page = new Page();
                 page.PageIndex = count;
                 page.ImgData = imgUrl;
-                // page.Image = LoadImageFromBase64(imgUrl);
+                page.Image = LoadImageFromBase64(imgUrl);
                 _pages.Add(page);
-            } *@
+            }
         }
         catch (Exception ex)
         {
@@ -84,7 +84,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // await GetImageSizes(_imgUrls);
+        if (_imgSize is null)
+        {
+            await GetImageSizes(_imgUrls);
+        }
     }
 
     private async Task GetImageSizes(List<string> datas)
@@ -102,35 +105,58 @@
             284941926
         } *@
 
-        var imgStr = datas[0];
+        if (datas == null || datas.Count() == 0)
+        {
 
-        var pdfImage = new PDFImage();
+        }
+        else
+        {
+            var imgStr = datas[0];
 
-        var _size = await JSRuntime.InvokeAsync<ImgSize>("getImageSize", imgStr);
-        pdfImage.Width = _size.width;
-        pdfImage.Height = _size.height;
-        Console.WriteLine($"pdfImage Width : {pdfImage.Width}");
-        Console.WriteLine($"pdfImage Height : {pdfImage.Height}");
+            var pdfImage = new PDFImage();
 
-        _canvasSize.Width = _size.width;
-        _canvasSize.Height = _size.height;
+            var size = await JSRuntime.InvokeAsync<ImgSize>("getImageSize", imgStr);
+            pdfImage.Width = size.width;
+            pdfImage.Height = size.height;
+            Console.WriteLine($"pdfImage Width : {pdfImage.Width}");
+            Console.WriteLine($"pdfImage Height : {pdfImage.Height}");
+
+            _imgSize = new ImgSize(size.width, size.height);
+        }
     }
 
     private void OnPaintSurface(SKPaintSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
+        canvas.Clear(SKColors.Beige);
 
-        int canvasWidth = e.Info.Width;
-        int canvasHeight = e.Info.Height;
+        float canvasWidth = (float)e.Info.Width;
+        float canvasHeight = (float)e.Info.Height;
 
-        @* if (_currentPage is not null)
+        if (_currentPage is not null)
         {
             SKImage? image = _currentPage.Image;
-            int ratio = canvasWidth / _imgSize.width;
-            int yvalue = (canvasHeight - _imgSize.height * ratio) / 2;
-            var rect = new SKRect(0, yvalue, _imgSize.width * ratio, _imgSize.height * ratio);
+            Console.WriteLine($"canvasWidth : {canvasWidth}, _imgSize.width : {_imgSize.width}");
+            float ratio = _imgSize.width != 0 ? canvasWidth / (float)_imgSize.width : 1;
+            float yvalue = (canvasHeight - (float)_imgSize.height * ratio) / 2;
+            var rect = new SKRect(0, yvalue, (float)_imgSize.width * ratio, (float)_imgSize.height * ratio);
+            Console.WriteLine($"rect : {rect.Top}, {rect.Left}, {rect.Width}, {rect.Height} {ratio}");
             canvas.DrawImage(image, rect);
-        } *@
+        }
+        var font = new SKFont
+        {
+            Size = 30,
+        };
+        var paint = new SKPaint {
+            IsAntialias = true,
+            Color = new SKColor(255, 0, 0),
+            Style = SKPaintStyle.Fill
+        };
+        Console.WriteLine("그림 그림!!");
+
+        
+
+        canvas.DrawText("Hello!!", 100, 100, font, paint);
     }
 
     private void SelectPage(Page page)

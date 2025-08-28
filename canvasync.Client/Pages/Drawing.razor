@@ -9,34 +9,31 @@
 
 <div class="page-layout">
     <!-- 상단 -->
-    <div class="top">
+    <div class="top" style="background-color: #b6d029;">
         <h3>상단 영역</h3>
-        <button @onclick="async () => await GetImageSizes(_imgUrls)">이미지 크기 계산</button>
+        <div class="button-group">
+            <button>Save</button>
+            <button>Print</button>
+        </div>
     </div>
 
     <!-- 가운데 -->
     <div class="middle">
-        <section class="left">
-            <ul class="slides">
-                @foreach (var page in _pages)
-                {
-                    <div class="pdf-preview" @onclick="() => SelectPage(page)">
-                        <div style="width: 70%;">
-                            <img src="@(page.ImgData)" loading="lazy" style="width: 70%;" />
-                        </div>
+        <section class="left" style="padding: 0;">
+            @foreach (var page in _pages)
+            {
+                <div class="pdf-preview" @onclick="() => SelectPage(page)">
+                    <div style="width: 100%; padding: 2px; text-align: center;">
+                        <img src="@(page.ImgData)" loading="lazy" style="width: 80%;" />
                     </div>
-                }
-            </ul>
+                </div>
+            }
         </section>
         <section class="center">
-            @* <h4>가운데 (50%)</h4>
-            <p>메인 콘텐츠</p> *@
             <SKCanvasView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" class="canvas-size" style=@($"border: 1px solid black;")  />
-            @* <img src="@_imgSrc" /> *@
         </section>
         <section class="right">
-            <h4>오른쪽 (30%)</h4>
-            <p>보조 패널 / 로그 / 상세 정보</p>
+            
         </section>
     </div>
 
@@ -136,12 +133,25 @@
         if (_currentPage is not null)
         {
             SKImage? image = _currentPage.Image;
-            Console.WriteLine($"canvasWidth : {canvasWidth}, _imgSize.width : {_imgSize.width}");
             float ratio = _imgSize.width != 0 ? canvasWidth / (float)_imgSize.width : 1;
             float yvalue = (canvasHeight - (float)_imgSize.height * ratio) / 2;
-            var rect = new SKRect(0, yvalue, (float)_imgSize.width * ratio, (float)_imgSize.height * ratio);
-            Console.WriteLine($"rect : {rect.Top}, {rect.Left}, {rect.Width}, {rect.Height} {ratio}");
+            var rectPaint = new SKPaint {
+                IsAntialias = true,
+                Color = new SKColor(242, 42, 99),
+                Style = SKPaintStyle.Fill
+            };
+            var rect = new SKRect(0, yvalue, (float)_imgSize.width * ratio, yvalue + (float)_imgSize.height * ratio);
             canvas.DrawImage(image, rect);
+            // canvas.DrawRect(rect, rectPaint);
+            Console.WriteLine($"canvasWidth : {canvasWidth}, canvasHeight : {canvasHeight}");
+            Console.WriteLine($"_imgSize.width : {_imgSize.width}, _imgSize.height : {_imgSize.height}");
+            Console.WriteLine($"(float)_imgSize.width * ratio : {(float)_imgSize.width * ratio}, (float)_imgSize.height * ratio : {(float)_imgSize.height * ratio}");
+            Console.WriteLine($"yvalue : {yvalue}");
+            Console.WriteLine($"image.top : {rect.Top}");
+
+            
+            @* canvas.DrawRect(0, 0, canvasWidth, yvalue, rectPaint);
+            canvas.DrawRect(0, canvasHeight - yvalue, canvasWidth, yvalue, rectPaint); *@
         }
         var font = new SKFont
         {
@@ -158,6 +168,32 @@
 
         canvas.DrawText("Hello!!", 100, 100, font, paint);
     }
+
+    private void MouseDown(MouseEventArgs args)
+    {
+        var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
+    }
+
+    private void MouseMove(MouseEventArgs args)
+    {
+
+    }
+
+    private void MouseUp(MouseEventArgs args)
+    {
+        
+    }
+
+    private void MouseOut(MouseEventArgs args)
+    {
+
+    }
+
+    private void MouseIn(MouseEventArgs args)
+    {
+
+    }
+
 
     private void SelectPage(Page page)
     {
@@ -210,10 +246,33 @@
 }
 
 /* 상단/하단 */
-.top, .bottom {
+.bottom {
     padding: 0.75rem 1rem;
     background: #ffffff;
     border-block: 1px solid #e7e7ea;
+}
+
+.top {
+    padding: 0.75rem 1rem;
+    border-block: 1px solid #e7e7ea;
+    display: flex;
+    justify-content: space-between; /* 왼쪽 h3, 오른쪽 버튼 그룹 */
+    align-items: center;
+    background-color: #b6d029;
+    padding: 8px;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px; /* 버튼 사이 여백 */
+}
+
+.button-group button {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
 }
 
 /* 가운데 */
@@ -221,14 +280,29 @@
     flex: 1 1 auto;                /* 남은 공간 모두 차지 */
     display: grid;
     @* grid-template-columns: 15% 60% 25%; *@
-    grid-template-columns: 3fr 13fr 4fr;
+    grid-template-columns: 2fr 14fr 4fr;
     gap: 12px;
     padding: 12px;
     min-height: 0;
 }
 
 /* 세 칸 공통 스타일 */
-.left, .center, .right {
+.center {
+    background: #ffffff;
+    border: 1px solid #e7e7ea;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.left {
+    margin-top: 1px;
+    margin-bottom: 1px;
+    background: #ffffff;
+    border: 1px solid #e7e7ea;
+    overflow: auto; /* 내용이 넘치면 해당 칸만 스크롤 */
+}
+
+.right {
     background: #ffffff;
     border: 1px solid #e7e7ea;
     border-radius: 12px;
@@ -263,7 +337,7 @@ section.center > skcanvasview {
     background-color: coral;
     border: 2px solid black;
     border-radius: 12px;
-    padding: 12px;
+    padding: 5px;
 }
 
 .pdf-preview:hover {

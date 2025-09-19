@@ -8,7 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="PDFtoImage" Version="5.1.1" />
-    <ProjectReference Include="..\canvasync.Client\canvasync.Client.csproj" />
+    <ProjectReference Include="../canvasync.Client/canvasync.Client.csproj" />
+    <ProjectReference Include="../canvasync.Library/canvasync.Library.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.6" />
   </ItemGroup>
 

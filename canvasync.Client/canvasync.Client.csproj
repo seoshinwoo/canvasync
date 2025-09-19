@@ -13,4 +13,8 @@
     <PackageReference Include="SkiaSharp" Version="3.119.0" />
     <PackageReference Include="SkiaSharp.Views.Blazor" Version="3.119.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../canvasync.Library/canvasync.Library.csproj" />
+  </ItemGroup>
 </Project>

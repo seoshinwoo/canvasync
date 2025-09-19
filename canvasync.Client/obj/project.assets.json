@@ -516,6 +516,20 @@
         "buildMultiTargeting": {
           "buildMultiTargeting/SkiaSharp.Views.Blazor.props": {}
         }
+      },
+      "canvasync.Library/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "SkiaSharp": "3.119.0",
+          "SkiaSharp.Views.Blazor": "3.119.0"
+        },
+        "compile": {
+          "bin/placeholder/canvasync.Library.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/canvasync.Library.dll": {}
+        }
       }
     },
     "net9.0/browser-wasm": {
@@ -1012,6 +1026,20 @@
         },
         "buildMultiTargeting": {
           "buildMultiTargeting/SkiaSharp.Views.Blazor.props": {}
+        }
+      },
+      "canvasync.Library/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "SkiaSharp": "3.119.0",
+          "SkiaSharp.Views.Blazor": "3.119.0"
+        },
+        "compile": {
+          "bin/placeholder/canvasync.Library.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/canvasync.Library.dll": {}
         }
       }
     }
@@ -1897,6 +1925,11 @@
         "staticwebassets/SizeWatcher.js",
         "staticwebassets/SizeWatcher.js.map"
       ]
+    },
+    "canvasync.Library/1.0.0": {
+      "type": "project",
+      "path": "../canvasync.Library/canvasync.Library.csproj",
+      "msbuildProject": "../canvasync.Library/canvasync.Library.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -1905,7 +1938,8 @@
       "Microsoft.NET.ILLink.Tasks >= 9.0.8",
       "Microsoft.NET.Sdk.WebAssembly.Pack >= 9.0.8",
       "SkiaSharp >= 3.119.0",
-      "SkiaSharp.Views.Blazor >= 3.119.0"
+      "SkiaSharp.Views.Blazor >= 3.119.0",
+      "canvasync.Library >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -1933,7 +1967,11 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj": {
+              "projectPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

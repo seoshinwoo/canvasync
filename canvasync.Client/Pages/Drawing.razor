@@ -2,6 +2,7 @@
 @using SkiaSharp.Views.Blazor
 @using Models
 @using System.Windows.Markup
+@using System.Drawing
 @rendermode InteractiveWebAssembly
 @page "/drawing"
 @inject HttpClient HttpClient
@@ -10,7 +11,7 @@
 <div class="page-layout">
     <!-- 상단 -->
     <div class="top" style="background-color: #b6d029;">
-        <h3>상단 영역</h3>
+        <h3></h3>
         <div class="button-group">
             <button>Save</button>
             <button>Print</button>
@@ -19,27 +20,87 @@
 
     <!-- 가운데 -->
     <div class="middle">
-        <section class="left" style="padding: 0;">
-            @foreach (var page in _pages)
-            {
-                <div class="pdf-preview" @onclick="() => SelectPage(page)">
-                    <div style="width: 100%; padding: 2px; text-align: center;">
-                        <img src="@(page.ImgData)" loading="lazy" style="width: 80%;" />
+        @if (_pageLoadDone)
+        {
+            <section class="left" style="padding: 0;">
+                @foreach (var page in _pages)
+                {
+                    <div class="pdf-preview" @onclick="() => SelectPage(page)">
+                        <div style="width: 100%; padding: 2px; text-align: center;">
+                            <img src="@(page.ImgData)" loading="lazy" style="width: 80%;" />
+                        </div>
+                        @* <SKGLView OnPaintSurface="(args) => DrawThumbnail(args, page)" EnableRenderLoop="true" IgnorePixelScaling="true" style="width : 80%"/> *@
                     </div>
+                }
+            </section>
+            <section class="center">
+                <SKGLView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" IgnorePixelScaling="true" class="canvas-size" style=@($"border: 1px solid black;")  
+                    @onmousedown="MouseDown"
+                    @onmousemove="MouseMove"
+                    @onmouseup="MouseUp"
+                    @onmouseout="MouseOut"
+                    @onmouseover="MouseIn"
+                />
+            </section>
+            <section class="right">
+                <div style="display: flex; flex-direction: row; width: 100%; gap: 10px">
+                    <div class="factor-rect-icon hover-btn" style="background-color: @(_selectedFactor is FactorRect ? "grey" : "");" @onclick='() => AddFactor("rect")'></div>   
+                    <div class="factor-circle-icon hover-btn" style="background-color: @(_selectedFactor is FactorCircle ? "grey" : "");" @onclick='() => AddFactor("circle")'></div>   
+                    <div class="factor-line-icon hover-btn" style="background-color: @(_selectedFactor is FactorLine ? "grey" : "");" @onclick='() => AddFactor("line")'></div>   
+                    <div class="factor-text-icon hover-btn" style="background-color: @(_selectedFactor is FactorText ? "grey" : "");" @onclick='() => AddFactor("text")'></div>   
+                    <div class="factor-pen-icon hover-btn" style="background-color: @(_selectedFactor is FactorPen ? "grey" : "");" @onclick='() => AddFactor("pen")'></div>   
                 </div>
-            }
-        </section>
-        <section class="center">
-            <SKCanvasView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" class="canvas-size" style=@($"border: 1px solid black;")  />
-        </section>
-        <section class="right">
-            
-        </section>
+
+                <hr>
+                @if (_selectedFactor is FactorRect)
+                {
+
+                }
+
+                @if (_selectedFactor is FactorCircle)
+                {
+
+                }
+
+                @if (_selectedFactor is FactorLine)
+                {
+                    
+                }
+
+                @if (_selectedFactor is FactorText factorText)
+                {
+                    if (_selectedFactor.Paint is null) { _selectedFactor.Paint = new SKPaint(); }
+                        
+                    <textarea @bind="factorText.Text" @oninput="TextChanged"/> 
+                }
+
+                @if (_selectedFactor is FactorPen)
+                {
+                    
+                }
+
+                <div>
+                    <span style="font-weight: 500; font-size: 25px;">🎨 Color</span>
+                        <input type="color" @bind="_selectedColor" @oninput="ColorChanged"
+                            style="width: 40px; height: 40px; border: none; border-radius: 6px; cursor: pointer;" />
+                </div>
+                <hr>
+                @* <div class="fixed-footer">
+                    <button class="btn btn-secondary" style="flex: 1;">취소</button>
+                    <button class="btn btn-primary" style="flex: 1;">저장</button>
+                    <button class="btn btn-danger" style="flex: 1;">삭제</button>
+                </div> *@
+            </section>
+        }
+        else
+        {
+            <p>Loading..</p>
+        }
     </div>
 
     <!-- 하단 -->
     <div class="bottom">
-        <small>하단 영역 · © 2025</small>
+        <small>© 2025</small>
     </div>
 </div>
 
@@ -47,20 +108,32 @@
 {
     private List<string> _imgUrls = new();
     private List<Page> _pages = new();
-    private Page? _currentPage;
-    private int SelectedIndex { get; set; }
-    private (int Width, int Height) _canvasSize = new();
-    public record ImgSize(int width, int height);
-    public ImgSize? _imgSize;
+    private Page? _selectedPage;
+    private List<Factor> _factors = new();
+    private record ImgSize(int width, int height);
+    private ImgSize? _imgSize;
+    private float _startY;
     private string _imgSrc = string.Empty;
+    private Factor? _selectedFactor;
+    private string _selectedColor = "#000000";
+    private SKSize _canvasSize;
+    private string _text = string.Empty;
+    private bool _isMousePressed = false;
+    private string? _selectedFactorPoint = null;
+    private bool _isPointDragging = false;
+    private float _diffLeft;
+    private float _diffTop;
+    private float _diffRight;
+    private float _diffBottom;
+    private FactorPen? _factorPen;
+    private SKPoint _penPoint = new SKPoint(0, 0);
+    private bool _pageLoadDone = false;
+    
     protected override async Task OnInitializedAsync()
     {
         try
         {
             _imgUrls = await HttpClient.GetFromJsonAsync<List<string>>("http://localhost:5175/api/pdfimages") ?? new List<string>();
-            
-
-            Console.WriteLine($"_imgUrls.Count : {_imgUrls.Count}");
             var count = 0;
 
             foreach (var imgUrl in _imgUrls)
@@ -72,10 +145,19 @@
                 page.Image = LoadImageFromBase64(imgUrl);
                 _pages.Add(page);
             }
+
+            // _selectedPage = _pages[0];
         }
         catch (Exception ex)
         {
             Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
+        }
+
+        for (int i = 0; i < 5; i++)
+        {
+            var page = new Page();
+            page.PageIndex = i;
+            _pages.Add(page);
         }
     }
 
@@ -84,75 +166,19 @@
         if (_imgSize is null)
         {
             await GetImageSizes(_imgUrls);
+            _pageLoadDone = true;
         }
     }
 
-    private async Task GetImageSizes(List<string> datas)
-    {
-        // Example: Initialize with default values
-        @* foreach (var data in datas)
-        {
-            var pdfImage = new PDFImage();
-
-            var size = await JSRuntime.InvokeAsync<(int width, int height)>("getImageSize", datas);
-            pdfImage.Width = size.width;
-            pdfImage.Height = size.height;
-
-            112384521
-            284941926
-        } *@
-
-        if (datas == null || datas.Count() == 0)
-        {
-
-        }
-        else
-        {
-            var imgStr = datas[0];
-
-            var pdfImage = new PDFImage();
-
-            var size = await JSRuntime.InvokeAsync<ImgSize>("getImageSize", imgStr);
-            pdfImage.Width = size.width;
-            pdfImage.Height = size.height;
-            Console.WriteLine($"pdfImage Width : {pdfImage.Width}");
-            Console.WriteLine($"pdfImage Height : {pdfImage.Height}");
-
-            _imgSize = new ImgSize(size.width, size.height);
-        }
-    }
-
-    private void OnPaintSurface(SKPaintSurfaceEventArgs e)
+    private void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
         canvas.Clear(SKColors.Beige);
 
         float canvasWidth = (float)e.Info.Width;
         float canvasHeight = (float)e.Info.Height;
+        Console.WriteLine($"canvasWidth : {canvasWidth}, canvasHeight : {canvasHeight}");
 
-        if (_currentPage is not null)
-        {
-            SKImage? image = _currentPage.Image;
-            float ratio = _imgSize.width != 0 ? canvasWidth / (float)_imgSize.width : 1;
-            float yvalue = (canvasHeight - (float)_imgSize.height * ratio) / 2;
-            var rectPaint = new SKPaint {
-                IsAntialias = true,
-                Color = new SKColor(242, 42, 99),
-                Style = SKPaintStyle.Fill
-            };
-            var rect = new SKRect(0, yvalue, (float)_imgSize.width * ratio, yvalue + (float)_imgSize.height * ratio);
-            canvas.DrawImage(image, rect);
-            // canvas.DrawRect(rect, rectPaint);
-            Console.WriteLine($"canvasWidth : {canvasWidth}, canvasHeight : {canvasHeight}");
-            Console.WriteLine($"_imgSize.width : {_imgSize.width}, _imgSize.height : {_imgSize.height}");
-            Console.WriteLine($"(float)_imgSize.width * ratio : {(float)_imgSize.width * ratio}, (float)_imgSize.height * ratio : {(float)_imgSize.height * ratio}");
-            Console.WriteLine($"yvalue : {yvalue}");
-            Console.WriteLine($"image.top : {rect.Top}");
-
-            
-            @* canvas.DrawRect(0, 0, canvasWidth, yvalue, rectPaint);
-            canvas.DrawRect(0, canvasHeight - yvalue, canvasWidth, yvalue, rectPaint); *@
-        }
         var font = new SKFont
         {
             Size = 30,
@@ -162,26 +188,155 @@
             Color = new SKColor(255, 0, 0),
             Style = SKPaintStyle.Fill
         };
-        Console.WriteLine("그림 그림!!");
 
-        
+        // PDF 이미지 띄우기
+        if (_selectedPage is not null)
+        {
+            float ratio = _imgSize?.width != 0 ? canvasWidth / (float)_imgSize!.width : 1;
+            _startY = (canvasHeight - (float)_imgSize.height * ratio) / 2;
+            var rectPaint = new SKPaint {
+                IsAntialias = true,
+                Color = new SKColor(242, 42, 99),
+                Style = SKPaintStyle.Fill
+            };
+            var rect = new SKRect(0, _startY, (float)_imgSize.width * ratio, _startY + (float)_imgSize.height * ratio);
+            canvas.DrawImage(_selectedPage.Image, rect);
 
-        canvas.DrawText("Hello!!", 100, 100, font, paint);
+            if (_selectedPage.Factors is not null)
+            {
+                foreach (var factor in _selectedPage.Factors)
+                {
+                    factor.Draw(canvas);
+                }
+            }
+        }
     }
 
     private void MouseDown(MouseEventArgs args)
     {
+        _isMousePressed = true;
         var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
+        Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
+
+        if (_selectedFactor is FactorPen)
+        {
+            _factorPen?.PenPath.MoveTo(mousePoint.X, mousePoint.Y);
+            _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
+        }
+        else
+        {
+            if (_selectedPage is not null && _selectedPage.Factors is not null)
+            {
+                // 주황색 점을 조금이라도 factor 바깥 방향에서 클릭하려고 하면 선택이 풀려버리는 것을 막는 코드 필요..
+
+                var factor = _selectedPage.Factors.Where(f => f.Box.Contains(mousePoint.X, mousePoint.Y)).LastOrDefault();
+                if (factor is not null)
+                {
+                    if (factor != _selectedFactor)
+                    {
+                        if (_selectedFactor is not null)
+                            _selectedFactor.isSelected = false;
+
+                        _selectedFactor = factor;
+                        _selectedFactor.isSelected = true;
+                    }
+
+                    bool isOnPoints = factor.PositionPoints.Any(p => SKPoint.Distance(p.Value, mousePoint) <= 20);
+                    if (isOnPoints && _selectedFactor is not null)
+                    {
+                        _isPointDragging = true;
+                        _selectedFactorPoint = factor.PositionPoints.Where(p => SKPoint.Distance(p.Value, mousePoint) <= 20).Select(p => p.Key).FirstOrDefault();
+                    }
+                    else
+                    {
+                        _selectedFactor = factor;
+
+                        _diffLeft = mousePoint.X- _selectedFactor.Box.Left;
+                        _diffTop = mousePoint.Y - _selectedFactor.Box.Top;
+                        _diffRight = _selectedFactor.Box.Right - mousePoint.X;
+                        _diffBottom = _selectedFactor.Box.Bottom - mousePoint.Y;
+                    }
+                }
+                else
+                {
+                    if (_selectedFactor is not null)
+                        _selectedFactor.isSelected = false;
+
+                    _selectedFactor = null;
+                }
+            }
+        }
     }
 
     private void MouseMove(MouseEventArgs args)
     {
+        if (_isMousePressed)
+        {
+            var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
 
+            if (_selectedFactor is not null && _selectedFactor is not FactorPen)
+            {
+                if (!_isPointDragging)
+                {
+                    _selectedFactor.Box = new SKRect(mousePoint.X - _diffLeft, mousePoint.Y - _diffTop, mousePoint.X + _diffRight, mousePoint.Y + _diffBottom);
+                    // Console.WriteLine($"_selectedFactor.Box : {_selectedFactor.Box.Left}, {_selectedFactor.Box.Top}, {_selectedFactor.Box.Right}, {_selectedFactor.Box.Bottom}");
+                }
+                else
+                {
+                    switch (_selectedFactorPoint)
+                    {
+                        case "LeftTop":
+                            _selectedFactor.Box = new SKRect(mousePoint.X, mousePoint.Y, _selectedFactor.Box.Right, _selectedFactor.Box.Bottom);
+                            break;
+                        case "MidTop":
+                            _selectedFactor.Box = new SKRect(_selectedFactor.Box.Left, mousePoint.Y, _selectedFactor.Box.Right, _selectedFactor.Box.Bottom);
+                            break;
+                        case "RightTop":
+                            _selectedFactor.Box = new SKRect(_selectedFactor.Box.Left, mousePoint.Y, mousePoint.X, _selectedFactor.Box.Bottom);
+                            break;
+                        case "LeftMid":
+                            _selectedFactor.Box = new SKRect(mousePoint.X, _selectedFactor.Box.Top, _selectedFactor.Box.Right, _selectedFactor.Box.Bottom);
+                            break;
+                        case "RightMid":
+                            _selectedFactor.Box = new SKRect(_selectedFactor.Box.Left, _selectedFactor.Box.Top, mousePoint.X, _selectedFactor.Box.Bottom);
+                            break;
+                        case "LeftBottom":
+                            _selectedFactor.Box = new SKRect(mousePoint.X, _selectedFactor.Box.Top, _selectedFactor.Box.Right, mousePoint.Y);
+                            break;
+                        case "MidBottom":
+                            _selectedFactor.Box = new SKRect(_selectedFactor.Box.Left, _selectedFactor.Box.Top, _selectedFactor.Box.Right, mousePoint.Y);
+                            break;
+                        case "RightBottom":
+                            _selectedFactor.Box = new SKRect(_selectedFactor.Box.Left, _selectedFactor.Box.Top, mousePoint.X, mousePoint.Y);
+                            break;
+                    }
+                }
+            }
+            else if (_selectedFactor is FactorPen)
+            {
+                _factorPen?.PenPath.QuadTo(_penPoint, new SKPoint(mousePoint.X, mousePoint.Y));
+                _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
+            }
+        }
     }
 
     private void MouseUp(MouseEventArgs args)
     {
-        
+        _isMousePressed = false;
+        _selectedFactorPoint = null;
+        _isPointDragging = false;
+
+        _diffLeft = 0;
+        _diffTop = 0;
+        _diffRight = 0;
+        _diffBottom = 0;
+
+        if (_selectedFactor is FactorPen)
+        {
+            _penPoint = new();
+            if (_factorPen is not null)
+                _selectedPage?.Factors?.Add(_factorPen);
+        }
     }
 
     private void MouseOut(MouseEventArgs args)
@@ -198,9 +353,150 @@
     private void SelectPage(Page page)
     {
         _imgSrc = page.ImgData;
-        _currentPage = page;
+        _selectedPage = page;
     }
 
+    private void OnCanvasSizeChanged(SKSize size)
+    {
+        _canvasSize = size;
+    }
+
+    private void TextChanged(ChangeEventArgs e)
+    {
+        if(_selectedFactor is FactorText factorText)
+        {
+            factorText.TextChanged(e.Value?.ToString() ?? string.Empty);
+        }
+    }
+
+    private void ColorChanged(ChangeEventArgs e)
+    {
+        _selectedColor = e.Value?.ToString() ?? "#000000";
+    }
+
+    private void AddFactor(string type)
+    {
+
+        if (_selectedPage is null) return;
+        if (_selectedFactor?.FactorType == type)
+        {
+            _selectedFactor = null;
+            return;
+        }
+        if (_selectedPage.Factors is null)
+            _selectedPage.Factors = new List<Factor>();
+
+        var factor = new Factor();
+        switch (type)
+        {
+            case "rect":
+                var factorRect = new FactorRect();
+                factorRect.Box = new SKRect(100, _startY, 200, _startY + 100);
+                factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
+                _selectedPage.Factors.Add(factorRect);
+                break;
+            case "circle":
+                var factorCircle = new FactorCircle();
+                factorCircle.Box = new SKRect(100, _startY, 200, _startY + 100);
+                factorCircle.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
+                _selectedPage.Factors.Add(factorCircle);
+                break;
+            case "line":
+                var factorLine = new FactorLine();
+                factorLine.Box = new SKRect(100, _startY, 200, _startY + 100);
+                factorLine.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
+                _selectedPage.Factors.Add(factorLine);
+                break;
+            case "text":
+                var textPaint = new SKPaint()
+                {
+                    Color = SKColor.Parse(_selectedColor)
+                };
+                var factorText = new FactorText(textPaint);
+                _selectedPage.Factors.Add(factorText);
+                _selectedFactor = factorText;
+                break;
+            case "pen":
+                var penPaint = new SKPaint()
+                {
+                    Color = SKColor.Parse(_selectedColor),
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 5,
+                    IsAntialias = true
+                };
+                _factorPen = new FactorPen(penPaint);
+                // _selectedPage.Factors.Add(factorPen);
+                _selectedFactor = _factorPen;
+                break;
+            default:
+                //
+                break;
+        }
+    }
+
+    private void DrawThumbnail(SKPaintGLSurfaceEventArgs e, Page page)
+    {
+        var canvas = e.Surface.Canvas;
+        canvas.Clear(SKColors.Beige);
+
+        float canvasWidth = (float)e.Info.Width;
+        float canvasHeight = (float)e.Info.Height;
+
+        var font = new SKFont
+        {
+            Size = 30,
+        };
+        var paint = new SKPaint {
+            IsAntialias = true,
+            Color = new SKColor(255, 0, 0),
+            Style = SKPaintStyle.Fill
+        };
+
+        // PDF 이미지 띄우기
+        if (page is not null)
+        {
+            float ratio = _imgSize.width != 0 ? canvasWidth / (float)_imgSize.width : 1;
+            _startY = (canvasHeight - (float)_imgSize.height * ratio) / 2;
+            var rectPaint = new SKPaint {
+                IsAntialias = true,
+                Color = new SKColor(242, 42, 99),
+                Style = SKPaintStyle.Fill
+            };
+            var rect = new SKRect(0, _startY, (float)_imgSize.width * ratio, _startY + (float)_imgSize.height * ratio);
+            canvas.DrawImage(page.Image, rect);
+
+            if (page.Factors is not null)
+            {
+                foreach (var factor in page.Factors)
+                {
+                    factor.Draw(canvas);
+                }
+            }
+        }
+    }
+
+    // ##########################################################
+    // 초반 PDF 이미지 크기 설정
+    // ##########################################################
+    private async Task GetImageSizes(List<string> datas)
+    {
+        if (datas == null || datas.Count() == 0)
+        {
+
+        }
+        else
+        {
+            var imgStr = datas[0];
+
+            var pdfImage = new PDFImage();
+
+            var size = await JSRuntime.InvokeAsync<ImgSize>("getImageSize", imgStr);
+            pdfImage.Width = size.width;
+            pdfImage.Height = size.height;
+
+            _imgSize = new ImgSize(size.width, size.height);
+        }
+    }
     private SKImage LoadImageFromBase64(string base64)
     {
         // 1. data URI prefix 제거
@@ -342,5 +638,23 @@ section.center > skcanvasview {
 
 .pdf-preview:hover {
     background-color: brown;
+}
+
+.hover-btn:hover {
+    background-color: grey;
+    cursor: pointer; 
+}
+
+.fixed-footer {
+    position: fixed;    /* 화면의 특정 위치에 고정 */
+    bottom: 0;          /* 화면 맨 아래에 위치 */
+    
+    background-color: white; /* 다른 콘텐츠에 가려지지 않도록 배경색 지정 */
+    padding: 15px;           /* 내부 여백 */
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* 위쪽 그림자로 경계 구분 */
+    z-index: 1000;           /* 다른 요소들 위에 표시되도록 z-index 설정 */
+
+    display: flex;      /* Flexbox 레이아웃 사용 */
+    gap: 5px;          /* 버튼 사이의 간격을 15px로 설정 (붙는 문제 해결) */
 }
 </style>

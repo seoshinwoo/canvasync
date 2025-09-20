@@ -9,16 +9,8 @@ public class Factor
     public SKRect Box { get; set; }
     public SKFont? Font { get; set; }
     public SKPaint? Paint { get; set; }
-    public bool isSelected = false;
     public float TextWidth { get; set; }
     public float TextHeight { get; set; }
-    public SKPaint _boxPaint = new SKPaint
-    {
-        Style = SKPaintStyle.Stroke,
-        Color = SKColors.Red,
-        StrokeWidth = 2,
-        PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5 }, 0)
-    };
 
     public SKPaint _pointPaint = new SKPaint
     {
@@ -41,8 +33,7 @@ public class Factor
 
     public virtual void Draw(SKCanvas canvas)
     {
-        if (isSelected)
-            canvas.DrawRect(Box, _boxPaint);
+        
     }
 }
 

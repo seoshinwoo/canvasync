@@ -25,7 +25,7 @@
             <section class="left" style="padding: 0;">
                 @foreach (var page in _pages)
                 {
-                    <div class="pdf-preview" @onclick="() => SelectPage(page)">
+                    <div class="pdf-preview" style="background-color: @(_selectedPage == page ? "#b6d029" : "");" @onclick="() => SelectPage(page)">
                         <div style="width: 100%; padding: 2px; text-align: center;">
                             <img src="@(page.ImgData)" loading="lazy" style="width: 80%;" />
                         </div>
@@ -34,7 +34,7 @@
                 }
             </section>
             <section class="center">
-                <SKGLView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" IgnorePixelScaling="true" class="canvas-size" style=@($"border: 1px solid black;")  
+                <SKGLView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" IgnorePixelScaling="true" class="canvas-size" style=@($"border: 1px solid white;")  
                     @onmousedown="MouseDown"
                     @onmousemove="MouseMove"
                     @onmouseup="MouseUp"
@@ -44,11 +44,11 @@
             </section>
             <section class="right">
                 <div style="display: flex; flex-direction: row; width: 100%; gap: 10px">
-                    <div class="factor-rect-icon hover-btn" style="background-color: @(_selectedFactor is FactorRect ? "grey" : "");" @onclick='() => AddFactor("rect")'></div>   
-                    <div class="factor-circle-icon hover-btn" style="background-color: @(_selectedFactor is FactorCircle ? "grey" : "");" @onclick='() => AddFactor("circle")'></div>   
-                    <div class="factor-line-icon hover-btn" style="background-color: @(_selectedFactor is FactorLine ? "grey" : "");" @onclick='() => AddFactor("line")'></div>   
-                    <div class="factor-text-icon hover-btn" style="background-color: @(_selectedFactor is FactorText ? "grey" : "");" @onclick='() => AddFactor("text")'></div>   
-                    <div class="factor-pen-icon hover-btn" style="background-color: @(_selectedFactor is FactorPen ? "grey" : "");" @onclick='() => AddFactor("pen")'></div>   
+                    <div class="factor-rect-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "rect" ? "grey" : "rect");" @onclick='() => AddFactor("rect")'></div>   
+                    <div class="factor-circle-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "circle" ? "grey" : "circle");" @onclick='() => AddFactor("circle")'></div>   
+                    <div class="factor-line-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "line" ? "grey" : "line");" @onclick='() => AddFactor("line")'></div>   
+                    <div class="factor-text-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "text" ? "grey" : "text");" @onclick='() => AddFactor("text")'></div>   
+                    <div class="factor-pen-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "pen" ? "grey" : "pen");" @onclick='() => AddFactor("pen")'></div>   
                 </div>
 
                 <hr>
@@ -173,11 +173,10 @@
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
     {
         var canvas = e.Surface.Canvas;
-        canvas.Clear(SKColors.Beige);
+        canvas.Clear(SKColors.White);
 
         float canvasWidth = (float)e.Info.Width;
         float canvasHeight = (float)e.Info.Height;
-        Console.WriteLine($"canvasWidth : {canvasWidth}, canvasHeight : {canvasHeight}");
 
         var font = new SKFont
         {
@@ -189,17 +188,44 @@
             Style = SKPaintStyle.Fill
         };
 
+        var borderPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke, 
+            StrokeWidth = 1, 
+            IsAntialias = true,
+            Color = SKColors.Black
+        };
+
+        var _positionPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Fill,
+            StrokeWidth = 5,
+            Color = SKColors.Orange
+        };
+
+        var _selectedPaint = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke,
+            Color = SKColors.Red,
+            StrokeWidth = 2,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5 }, 0)
+        };
+
         // PDF 이미지 띄우기
         if (_selectedPage is not null)
         {
-            float ratio = _imgSize?.width != 0 ? canvasWidth / (float)_imgSize!.width : 1;
+            // 이미지의 경계가 보이도록 0.99f 를 곱해줌
+            float ratio = _imgSize?.width != 0 ? (canvasWidth * 0.99f)/ (float)_imgSize!.width : 1;
             _startY = (canvasHeight - (float)_imgSize.height * ratio) / 2;
             var rectPaint = new SKPaint {
                 IsAntialias = true,
                 Color = new SKColor(242, 42, 99),
                 Style = SKPaintStyle.Fill
             };
-            var rect = new SKRect(0, _startY, (float)_imgSize.width * ratio, _startY + (float)_imgSize.height * ratio);
+
+            // 이미지의 경계가 보이도록 0이 아닌 5부터 시작
+            var rect = new SKRect(5, _startY, (float)_imgSize.width * ratio, _startY + (float)_imgSize.height * ratio);
+            canvas.DrawRect(rect, borderPaint);
             canvas.DrawImage(_selectedPage.Image, rect);
 
             if (_selectedPage.Factors is not null)
@@ -208,6 +234,20 @@
                 {
                     factor.Draw(canvas);
                 }
+            }
+
+            if (_selectedFactor is not null && _selectedFactor is not FactorPen)
+            {
+                canvas.DrawRect(_selectedFactor.Box, _selectedPaint);
+
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left, _selectedFactor.Box.Top), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.MidX, _selectedFactor.Box.Top), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right, _selectedFactor.Box.Top), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left, _selectedFactor.Box.MidY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right, _selectedFactor.Box.MidY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left, _selectedFactor.Box.Bottom), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.MidX, _selectedFactor.Box.Bottom), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right, _selectedFactor.Box.Bottom), _positionPaint);
             }
         }
     }
@@ -234,11 +274,7 @@
                 {
                     if (factor != _selectedFactor)
                     {
-                        if (_selectedFactor is not null)
-                            _selectedFactor.isSelected = false;
-
                         _selectedFactor = factor;
-                        _selectedFactor.isSelected = true;
                     }
 
                     bool isOnPoints = factor.PositionPoints.Any(p => SKPoint.Distance(p.Value, mousePoint) <= 20);
@@ -259,11 +295,15 @@
                 }
                 else
                 {
-                    if (_selectedFactor is not null)
-                        _selectedFactor.isSelected = false;
-
                     _selectedFactor = null;
                 }
+            }
+        }
+        if (_selectedPage is not null)
+        {
+            if (_selectedPage.Factors is not null)
+            {
+                Console.WriteLine($"factor의 개수 : {_selectedPage.Factors.Count}");
             }
         }
     }
@@ -354,6 +394,7 @@
     {
         _imgSrc = page.ImgData;
         _selectedPage = page;
+        _selectedFactor = null;
     }
 
     private void OnCanvasSizeChanged(SKSize size)
@@ -392,20 +433,23 @@
             case "rect":
                 var factorRect = new FactorRect();
                 factorRect.Box = new SKRect(100, _startY, 200, _startY + 100);
-                factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
+                factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
                 _selectedPage.Factors.Add(factorRect);
+                _selectedFactor = factorRect;
                 break;
             case "circle":
                 var factorCircle = new FactorCircle();
                 factorCircle.Box = new SKRect(100, _startY, 200, _startY + 100);
                 factorCircle.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
                 _selectedPage.Factors.Add(factorCircle);
+                _selectedFactor = factorCircle;
                 break;
             case "line":
                 var factorLine = new FactorLine();
                 factorLine.Box = new SKRect(100, _startY, 200, _startY + 100);
                 factorLine.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
                 _selectedPage.Factors.Add(factorLine);
+                _selectedFactor = factorLine;
                 break;
             case "text":
                 var textPaint = new SKPaint()
@@ -413,6 +457,7 @@
                     Color = SKColor.Parse(_selectedColor)
                 };
                 var factorText = new FactorText(textPaint);
+                factorText.Box = new SKRect(100, _startY, 100 + factorText.Box.Width, _startY + factorText.Box.Height);
                 _selectedPage.Factors.Add(factorText);
                 _selectedFactor = factorText;
                 break;
@@ -425,13 +470,15 @@
                     IsAntialias = true
                 };
                 _factorPen = new FactorPen(penPaint);
-                // _selectedPage.Factors.Add(factorPen);
+                _selectedPage.Factors.Add(_factorPen);
                 _selectedFactor = _factorPen;
                 break;
             default:
-                //
+                _selectedFactor = new();
                 break;
         }
+
+        _selectedFactor.FactorType = type;
     }
 
     private void DrawThumbnail(SKPaintGLSurfaceEventArgs e, Page page)
@@ -630,14 +677,12 @@ section.center > skcanvasview {
 }
 
 .pdf-preview {
-    background-color: coral;
-    border: 2px solid black;
-    border-radius: 12px;
+    border: 1px solid lightgray;
     padding: 5px;
 }
 
 .pdf-preview:hover {
-    background-color: brown;
+    background-color: #b6d029;
 }
 
 .hover-btn:hover {

@@ -75,7 +75,10 @@ else
             currentComponent = StateContainer.ComponentType;
         });
 
-        StateHasChanged();
+        await InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
     }
 
     private string hostBtnStyle = "background-color:#FFB900";

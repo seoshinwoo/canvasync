@@ -1,16 +1,32 @@
 @rendermode InteractiveServer
 @page "/guest"
+@inject Containers.StateContainer StateContainer
+@inject NavigationManager NavigationManager
 
-<h1>Guest Page</h1>
 
-주소 입력 : <input @bind="_address"/>
-<button @onclick = "Enter">입장</button>
+<div style="color: #5C6916; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+    @* 주소 입력 : <input @bind="_address"/> *@
+    @if (!_isPresentationOpened)
+    {
+        <p style="color: red">아직 강의가 오픈되지 않았습니다.</p>
+    }
+
+    <button @onclick = "Enter">입장</button>
+</div>
 
 @code
 {
     private string _address = string.Empty;
+    private bool _isPresentationOpened = true;
     private void Enter()
     {
-        // 입장
+        if (StateContainer.imageUrls.Count > 0)
+        {
+            NavigationManager.NavigateTo("/drawing/guest");
+        }
+        else
+        {
+            _isPresentationOpened = false;
+        }
     }
 }

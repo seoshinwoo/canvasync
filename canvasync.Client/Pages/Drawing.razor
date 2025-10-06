@@ -1,12 +1,16 @@
+@using Microsoft.VisualBasic
 @using SkiaSharp
 @using SkiaSharp.Views.Blazor
+@using Microsoft.AspNetCore.SignalR.Client
 @using Models
 @using System.Windows.Markup
 @using System.Drawing
 @rendermode InteractiveWebAssembly
-@page "/drawing"
+@page "/drawing/{memberType}"
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
 
 <div class="page-layout">
     <!-- 상단 -->
@@ -44,11 +48,11 @@
             </section>
             <section class="right">
                 <div style="display: flex; flex-direction: row; width: 100%; gap: 10px">
-                    <div class="factor-rect-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "rect" ? "grey" : "rect");" @onclick='() => AddFactor("rect")'></div>   
-                    <div class="factor-circle-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "circle" ? "grey" : "circle");" @onclick='() => AddFactor("circle")'></div>   
-                    <div class="factor-line-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "line" ? "grey" : "line");" @onclick='() => AddFactor("line")'></div>   
-                    <div class="factor-text-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "text" ? "grey" : "text");" @onclick='() => AddFactor("text")'></div>   
-                    <div class="factor-pen-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == "pen" ? "grey" : "pen");" @onclick='() => AddFactor("pen")'></div>   
+                    <div class="factor-rect-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Rect ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
+                    <div class="factor-circle-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Circle ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
+                    <div class="factor-line-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Line ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
+                    <div class="factor-text-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Text ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
+                    <div class="factor-pen-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Pen ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
                 </div>
 
                 <hr>
@@ -106,8 +110,12 @@
 
 @code
 {
+    [Parameter]
+    public string? memberType { get; set; }
+    private HubConnection? _hubConnection;
     private List<string> _imgUrls = new();
     private List<Page> _pages = new();
+    private List<Page> _hostPages = new();
     private Page? _selectedPage;
     private List<Factor> _factors = new();
     private record ImgSize(int width, int height);
@@ -128,9 +136,31 @@
     private FactorPen? _factorPen;
     private SKPoint _penPoint = new SKPoint(0, 0);
     private bool _pageLoadDone = false;
+    float _canvasWidth;
+    float _canvasHeight;
+    float _ratio;
     
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine($"멤버 타입 : {memberType}");
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/canvashub"))
+            .Build();
+
+        _hubConnection.On<string, Factor>("ReceiveDrawings", (user, factor) => 
+        {
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await _hubConnection.StartAsync();
+        }
+        catch
+        {
+            Console.WriteLine("hubConnection 시작 실패");
+        }
+
         try
         {
             _imgUrls = await HttpClient.GetFromJsonAsync<List<string>>("http://localhost:5175/api/pdfimages") ?? new List<string>();
@@ -147,17 +177,16 @@
             }
 
             // _selectedPage = _pages[0];
+
+            if (memberType == "guest")
+            {
+                Console.WriteLine($"page 개수 : {_pages.Count}");
+                Console.WriteLine($"hostPage 개수 : {_hostPages.Count}");
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
-        }
-
-        for (int i = 0; i < 5; i++)
-        {
-            var page = new Page();
-            page.PageIndex = i;
-            _pages.Add(page);
         }
     }
 
@@ -175,8 +204,8 @@
         var canvas = e.Surface.Canvas;
         canvas.Clear(SKColors.White);
 
-        float canvasWidth = (float)e.Info.Width;
-        float canvasHeight = (float)e.Info.Height;
+        _canvasWidth = (float)e.Info.Width;
+        _canvasHeight = (float)e.Info.Height;
 
         var font = new SKFont
         {
@@ -215,8 +244,8 @@
         if (_selectedPage is not null)
         {
             // 이미지의 경계가 보이도록 0.99f 를 곱해줌
-            float ratio = _imgSize?.width != 0 ? (canvasWidth * 0.99f)/ (float)_imgSize!.width : 1;
-            _startY = (canvasHeight - (float)_imgSize.height * ratio) / 2;
+            _ratio = _imgSize?.width != 0 ? (_canvasWidth * 0.99f)/ (float)_imgSize!.width : 1;
+            _startY = (_canvasHeight - (float)_imgSize.height * _ratio) / 2;
             var rectPaint = new SKPaint {
                 IsAntialias = true,
                 Color = new SKColor(242, 42, 99),
@@ -224,7 +253,7 @@
             };
 
             // 이미지의 경계가 보이도록 0이 아닌 5부터 시작
-            var rect = new SKRect(5, _startY, (float)_imgSize.width * ratio, _startY + (float)_imgSize.height * ratio);
+            var rect = new SKRect(5, _startY, (float)_imgSize.width * _ratio, _startY + (float)_imgSize.height * _ratio);
             canvas.DrawRect(rect, borderPaint);
             canvas.DrawImage(_selectedPage.Image, rect);
 
@@ -233,6 +262,17 @@
                 foreach (var factor in _selectedPage.Factors)
                 {
                     factor.Draw(canvas);
+                }
+            }
+
+            if (memberType == "guest" && _hostPages.Count > 0)
+            {
+                if (_hostPages[_selectedPage.PageIndex] is not null && _hostPages[_selectedPage.PageIndex].Factors is not null)
+                {
+                    foreach (var factor in _hostPages[_selectedPage.PageIndex].Factors)
+                    {
+                        factor.Draw(canvas);
+                    }
                 }
             }
 
@@ -308,7 +348,7 @@
         }
     }
 
-    private void MouseMove(MouseEventArgs args)
+    private async Task MouseMove(MouseEventArgs args)
     {
         if (_isMousePressed)
         {
@@ -360,7 +400,7 @@
         }
     }
 
-    private void MouseUp(MouseEventArgs args)
+    private async Task MouseUp(MouseEventArgs args)
     {
         _isMousePressed = false;
         _selectedFactorPoint = null;
@@ -375,7 +415,14 @@
         {
             _penPoint = new();
             if (_factorPen is not null)
+            {
                 _selectedPage?.Factors?.Add(_factorPen);
+                
+                if (memberType == "host")
+                {
+                    await Send();
+                }
+            }
         }
     }
 
@@ -415,7 +462,7 @@
         _selectedColor = e.Value?.ToString() ?? "#000000";
     }
 
-    private void AddFactor(string type)
+    private void AddFactor(FactorType type)
     {
 
         if (_selectedPage is null) return;
@@ -424,34 +471,32 @@
             _selectedFactor = null;
             return;
         }
-        if (_selectedPage.Factors is null)
-            _selectedPage.Factors = new List<Factor>();
 
         var factor = new Factor();
         switch (type)
         {
-            case "rect":
+            case FactorType.Rect:
                 var factorRect = new FactorRect();
                 factorRect.Box = new SKRect(100, _startY, 200, _startY + 100);
                 factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
                 _selectedPage.Factors.Add(factorRect);
                 _selectedFactor = factorRect;
                 break;
-            case "circle":
+            case FactorType.Circle:
                 var factorCircle = new FactorCircle();
                 factorCircle.Box = new SKRect(100, _startY, 200, _startY + 100);
                 factorCircle.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
                 _selectedPage.Factors.Add(factorCircle);
                 _selectedFactor = factorCircle;
                 break;
-            case "line":
+            case FactorType.Line:
                 var factorLine = new FactorLine();
                 factorLine.Box = new SKRect(100, _startY, 200, _startY + 100);
                 factorLine.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
                 _selectedPage.Factors.Add(factorLine);
                 _selectedFactor = factorLine;
                 break;
-            case "text":
+            case FactorType.Text:
                 var textPaint = new SKPaint()
                 {
                     Color = SKColor.Parse(_selectedColor)
@@ -461,7 +506,7 @@
                 _selectedPage.Factors.Add(factorText);
                 _selectedFactor = factorText;
                 break;
-            case "pen":
+            case FactorType.Pen:
                 var penPaint = new SKPaint()
                 {
                     Color = SKColor.Parse(_selectedColor),
@@ -521,6 +566,191 @@
             }
         }
     }
+
+    private async Task Send()
+    {
+        if (_hubConnection is not null)
+        {
+            if (_selectedFactor is not null)
+            {
+                Console.WriteLine("Send 함수 실행!!");
+
+                // 동작(생성, 삭제, 수정) factor
+
+                var pages = new List<Page>();
+
+                await _hubConnection.SendAsync("SendDrawings", "shinwoo", pages);
+            }
+        }
+    }
+
+    @* private FactorDto FactorToFactorDto(int pageIndex)
+    {
+        var factorDto = new FactorDto();
+        if (_selectedFactor is not null)
+        {
+            factorDto.PageIndex = pageIndex;
+
+            factorDto.FactorType = _selectedFactor.FactorType;
+            factorDto.Left = _selectedFactor.Box.Left;
+            factorDto.Top = _selectedFactor.Box.Top;
+            factorDto.Right = _selectedFactor.Box.Right;
+            factorDto.Bottom = _selectedFactor.Box.Bottom;
+
+            if (_selectedFactor.Paint is not null)
+            {
+                factorDto.PaintStyle = _selectedFactor.Paint.Style.ToString();
+                factorDto.PaintStrokeWidth = _selectedFactor.Paint.StrokeWidth;
+                factorDto.PaintColor = _selectedFactor.Paint.Color.ToString();
+            }
+
+            if (_selectedFactor.Font is not null)
+            {
+                factorDto.FontSize = _selectedFactor.Font.Size;
+            }
+
+            if (_selectedFactor is FactorText factorText)
+            {
+                var factorTextDto = factorDto as FactorTextDto;
+
+                foreach (var textBlock in factorText.TextBlocks)
+                {
+                    var factorTextBlockDto = new TextBlockDto();
+
+                    factorTextBlockDto.Text = textBlock.Text;
+                    factorTextBlockDto.PaintStyle = textBlock.Paint.Style.ToString();
+                    factorTextBlockDto.PaintStrokeWidth = textBlock.Paint.StrokeWidth;
+                    factorTextBlockDto.PaintColor = textBlock.Paint.Color.ToString();
+                    factorTextBlockDto.FontSize = textBlock.Font.Size;
+                    factorTextBlockDto.Top = textBlock.Top;
+                    factorTextBlockDto.Left = textBlock.Left;
+
+                    factorTextDto.TextBlockDtos.Add(factorTextBlockDto);
+                }
+            }
+
+            if (_selectedFactor is FactorPen)
+            {
+
+            }
+        }
+
+        switch (_selectedFactor.FactorType)
+        {
+            case "rect":
+            case "circle":
+            case "line":
+                var factorDto = new FactorDto();
+                factorDto.PageIndex = pageIndex;
+
+                factorDto.FactorType = _selectedFactor.FactorType;
+                factorDto.Left = _selectedFactor.Box.Left;
+                factorDto.Top = _selectedFactor.Box.Top;
+                factorDto.Right = _selectedFactor.Box.Right;
+                factorDto.Bottom = _selectedFactor.Box.Bottom;
+
+                if (_selectedFactor.Paint is not null)
+                {
+                    factorDto.PaintStyle = _selectedFactor.Paint.Style.ToString();
+                    factorDto.PaintStrokeWidth = _selectedFactor.Paint.StrokeWidth;
+                    factorDto.PaintColor = _selectedFactor.Paint.Color.ToString();
+                }
+
+                if (_selectedFactor.Font is not null)
+                {
+                    factorDto.FontSize = _selectedFactor.Font.Size;
+                }
+                break;
+            case "text":
+                var factorTextDto = new FactorTextDto();
+
+                foreach (var textBlock in _selectedFactor.TextBlocks)
+                {
+                    var factorTextBlockDto = new TextBlockDto();
+
+                    factorTextBlockDto.Text = textBlock.Text;
+                    factorTextBlockDto.PaintStyle = textBlock.Paint.Style.ToString();
+                    factorTextBlockDto.PaintStrokeWidth = textBlock.Paint.StrokeWidth;
+                    factorTextBlockDto.PaintColor = textBlock.Paint.Color.ToString();
+                    factorTextBlockDto.FontSize = textBlock.Font.Size;
+                    factorTextBlockDto.Top = textBlock.Top;
+                    factorTextBlockDto.Left = textBlock.Left;
+
+                    factorTextDto.TextBlockDtos.Add(factorTextBlockDto);
+                }
+                break;
+            case "pen":
+                //
+                break;
+        }
+        
+
+        return factorDto;
+    } *@
+
+    @* private List<PageDto> DrawingsToDto(List<Page> pages)
+    {
+        var pageDtos = new List<PageDto>();
+
+        foreach (var page in pages)
+        {
+            if (page.Factors.Count == 0) { continue; }
+
+            var pageDto = new PageDto();
+            foreach (var factor in page.Factors)
+            {
+                switch (factor.FactorType)
+                {
+                    case "rect":
+                        //
+                        break;
+                    case "circle":
+                        //
+                        break;
+                    case "line":
+                        //
+                        break;
+                    case "text":
+                        //
+                        break;
+                    case "pen":
+                        {
+                            var factorPenDto = new FactorPenDto();
+                            var factorPen = (FactorPen)factor;
+                            using var iterator = factorPen.PenPath.CreateRawIterator();
+
+                            var points = new SKPoint[4];
+                            SKPathVerb verb;
+
+                            while ((verb = iterator.Next(points)) != SKPathVerb.Done)
+                            {
+                                var commandDto = new PathCommandDto
+                                {
+                                    Verb = verb.ToString()
+                                };
+
+                                int pointCount = verb switch
+                                {
+                                    SKPathVerb.Move => 1,
+                                    SKPathVerb.Line => 2,
+                                    SKPathVerb.Quad => 3,
+                                    SKPathVerb.Cubic => 4,
+                                    SKPathVerb.Conic => 4,
+                                    SKPathVerb.Close => 5,
+                                };
+
+                                commandDto.Points.AddRange(points.Take(pointCount).Select(p => (p.X, p.Y)));
+                                factorPenDto.Pens.Add(commandDto);
+                            }
+                            pageDto.FactorDtos.Add(factorPenDto);
+                        }
+                        break;
+                }
+            }
+        }
+
+        return pageDtos;
+    } *@
 
     // ##########################################################
     // 초반 PDF 이미지 크기 설정

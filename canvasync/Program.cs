@@ -1,5 +1,7 @@
 using canvasync.Components;
 using canvasync.Containers;
+using Hubs;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,12 +17,22 @@ builder.Services.AddControllers();
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
+builder.Services.AddSignalR();
+
+builder.Services.AddResponseCompression(opts =>
+{
+   opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+       [ "application/octet-stream" ]);
+});
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<StateContainer>();
 
 var app = builder.Build();
+
+app.UseResponseCompression();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -49,5 +61,7 @@ app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
 
 app.MapControllers();
+
+app.MapHub<CanvasHub>("/canvashub");
 
 app.Run();

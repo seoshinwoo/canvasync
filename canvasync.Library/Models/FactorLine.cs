@@ -1,6 +1,6 @@
 using SkiaSharp;
 
-namespace Models;
+namespace canvasync.Library.Models;
 
 public class FactorLine : Factor
 {

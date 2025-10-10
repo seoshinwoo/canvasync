@@ -1,11 +1,10 @@
 using SkiaSharp;
 
-namespace Models;
+namespace canvasync.Library.Models;
 
 public class FactorText : Factor
 {
-    public List<TextBlock> TextBlocks { get; set; } = new() { };
-    private float _textYPosition;
+    public List<TextBlock> TextBlocks { get; set; } = new(){new TextBlock(){ Text = string.Empty }};
     public string _text = string.Empty;
     public string Text
     {
@@ -16,7 +15,8 @@ public class FactorText : Factor
 
         set
         {
-            _text = value;
+            // _text = value;
+            TextBlocks[0].Text = value;
         }
     }
     private SKPaint _positionPaint = new SKPaint
@@ -27,36 +27,46 @@ public class FactorText : Factor
     };
 
 
-    public FactorText(SKPaint paint)
+    public FactorText(string color)
     {
-        Text = "text..";
-        Font = new SKFont() { Size = 30 };
-        Paint = paint;
+        TextBlocks[0].Text = "text..";
+        if (!string.IsNullOrEmpty(color))
+        {
+            if (SKColor.TryParse(color, out SKColor skColor))
+            {
+                TextBlocks[0].Paint = new SKPaint() { Color = skColor };
+            }
+        }
+        TextBlocks[0].Font = new SKFont() { Size = 30 };
 
-        MeasureTextSize();
-        Box = new SKRect(Box.Left, Box.Top, Box.Left + TextWidth, Box.Top + TextHeight);
+        TextBlocks[0].MeasureTextSize();
+        Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
     }
 
     public void MeasureTextSize()
     {
-        TextWidth = Font.MeasureText(Text);
+        TextBlocks[0].Width = Font.MeasureText(TextBlocks[0].Text);
         Font.GetFontMetrics(out SKFontMetrics metrics);
-        TextHeight = metrics.Descent - metrics.Ascent;
+        TextBlocks[0].Height = metrics.Descent - metrics.Ascent;
 
-        if (TextWidth > Box.Width)
+        if (TextBlocks[0].Width > Box.Width)
         {
-            Box = new SKRect(Box.Left, Box.Top, Box.Left + TextWidth, Box.Top + Box.Height);
+            Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
         }
     }
 
     public void TextChanged(string text)
     {
-        Text = text;
+        // Text = text;
+        TextBlocks[0].Text = text;
         MeasureTextSize();
     }
     public override void Draw(SKCanvas canvas)
     {
-        canvas.DrawText(Text, Box.Left, Box.Top + TextHeight, Font, Paint);
+        foreach (var textBlock in TextBlocks)
+        {
+            canvas.DrawText(textBlock.Text, Box.Left, Box.Top + TextBlocks[0].Height, textBlock.Font, textBlock.Paint);
+        }
     }
 }
 

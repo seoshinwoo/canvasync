@@ -1,19 +1,94 @@
+
 using System.Text.Json.Serialization;
 using SkiaSharp;
 
-namespace Models;
+namespace canvasync.Library.Models;
 
 public class Factor
 {
+    private SKRect _box;
+    private SKFont _font;
+    private SKPaint _paint;
     public FactorType FactorType = FactorType.None;
     [JsonIgnore]
-    public SKRect Box { get; set; }
+    public SKRect Box
+    {
+        get
+        {
+            if (_box.IsEmpty && FactorType is not FactorType.Pen)
+            {
+                _box = SKRect.Create(JsonBoxLeft, JsonBoxTop, JsonBoxWidth, JsonBoxHeight);
+            }
+            return _box;
+        }
+        set
+        {
+            _box = value;
+            JsonBoxLeft = value.Left;
+            JsonBoxTop = value.Top;
+            JsonBoxWidth = value.Width;
+            JsonBoxHeight = value.Height;
+        }
+    }
     [JsonIgnore]
-    public SKFont? Font { get; set; }
+    public SKFont Font
+    {
+        get
+        {
+            if (_font is null)
+            {
+                SKTypeface typeface = SKTypeface.FromFamilyName(JsonFontFamily, JsonFontWeight, (int)SKFontStyleWidth.Normal, JsonFontSlant);
+                _font = new SKFont(typeface, JsonFontSize);
+            }
+            return _font;
+        }
+        set
+        {
+            _font = value;
+            if (value is not null)
+            {
+                JsonFontFamily = value.Typeface?.FamilyName;
+                JsonFontSize = value.Size;
+                JsonFontWeight = value.Typeface?.FontWeight ?? (int)SKFontStyleWeight.Normal;
+                JsonFontSlant = value.Typeface?.FontSlant ?? SKFontStyleSlant.Upright;
+            }
+        }
+    }
     [JsonIgnore]
-    public SKPaint? Paint { get; set; }
-    public float TextWidth { get; set; }
-    public float TextHeight { get; set; }
+    public SKPaint Paint
+    {
+        get
+        {
+            if (_paint is null)
+            {
+                _paint = new SKPaint
+                {
+                    Style = JsonPaintStyle,
+                    StrokeWidth = JsonPaintStrokeWidth,
+                    IsAntialias = JsonPaintIsAntialias
+                };
+                if (SKColor.TryParse(JsonPaintColor, out SKColor color))
+                {
+                    _paint.Color = color;
+                }
+            }
+            return _paint;
+        }
+        set
+        {
+            _paint = value;
+
+            if (value != null)
+            {
+                JsonPaintColor = value.Color.ToString();
+                JsonPaintStyle = value.Style;
+                JsonPaintStrokeWidth = value.StrokeWidth;
+                JsonPaintIsAntialias = value.IsAntialias;
+            }
+        }
+    }
+    // public float TextWidth { get; set; }
+    // public float TextHeight { get; set; }
 
     // Box 직렬화를 위해..
     public float JsonBoxLeft { get; set; }
@@ -24,11 +99,12 @@ public class Factor
     // Font 직렬화를 위해..
     public string? JsonFontFamily { get; set; }
     public float JsonFontSize { get; set; }
-    public float JsonFontWeight { get; set; }
+    public int JsonFontWeight { get; set; }
+    public SKFontStyleSlant JsonFontSlant { get; set; }
 
     // Paint 직렬화를 위해..
     public string? JsonPaintColor { get; set; }
-    public string? JsonPaintStyle { get; set; }
+    public SKPaintStyle JsonPaintStyle { get; set; }
     public float JsonPaintStrokeWidth { get; set; }
     public bool JsonPaintIsAntialias { get; set; }
 

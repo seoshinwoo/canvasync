@@ -1,4 +1,4 @@
-namespace Models;
+namespace canvasync.Library.Models;
 
 public class Member
 {

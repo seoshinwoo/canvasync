@@ -2,7 +2,8 @@
 @using SkiaSharp
 @using SkiaSharp.Views.Blazor
 @using Microsoft.AspNetCore.SignalR.Client
-@using Models
+@using canvasync.Library.Dtos
+@using canvasync.Library.Models;
 @using System.Windows.Markup
 @using System.Drawing
 @rendermode InteractiveWebAssembly
@@ -48,11 +49,11 @@
             </section>
             <section class="right">
                 <div style="display: flex; flex-direction: row; width: 100%; gap: 10px">
-                    <div class="factor-rect-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Rect ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
-                    <div class="factor-circle-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Circle ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
-                    <div class="factor-line-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Line ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
-                    <div class="factor-text-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Text ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
-                    <div class="factor-pen-icon hover-btn" style="background-color: @(_selectedFactor?.FactorType == FactorType.Pen ? "grey" : "");" @onclick='() => AddFactor(_selectedFactor!.FactorType)'></div>   
+                    <div class="factor-rect-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Rect) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Rect)'></div>   
+                    <div class="factor-circle-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Circle) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Circle)'></div>   
+                    <div class="factor-line-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Line) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Line)'></div>   
+                    <div class="factor-text-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Text) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Text)'></div>   
+                    <div class="factor-pen-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Pen) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Pen)'></div>   
                 </div>
 
                 <hr>
@@ -75,7 +76,7 @@
                 {
                     if (_selectedFactor.Paint is null) { _selectedFactor.Paint = new SKPaint(); }
                         
-                    <textarea @bind="factorText.Text" @oninput="TextChanged"/> 
+                    <textarea @bind="factorText.TextBlocks[0]" @oninput="TextChanged"/> 
                 }
 
                 @if (_selectedFactor is FactorPen)
@@ -147,7 +148,7 @@
             .WithUrl(Navigation.ToAbsoluteUri("/canvashub"))
             .Build();
 
-        _hubConnection.On<string, Factor>("ReceiveDrawings", (user, factor) => 
+        _hubConnection.On<string, FactorData>("ReceiveDrawings", (user, factor) => 
         {
             InvokeAsync(StateHasChanged);
         });
@@ -501,7 +502,8 @@
                 {
                     Color = SKColor.Parse(_selectedColor)
                 };
-                var factorText = new FactorText(textPaint);
+                var factorText = new FactorText(_selectedColor);
+                factorText.Paint = new SKPaint(){ Color = SKColor.Parse(_selectedColor) };
                 factorText.Box = new SKRect(100, _startY, 100 + factorText.Box.Width, _startY + factorText.Box.Height);
                 _selectedPage.Factors.Add(factorText);
                 _selectedFactor = factorText;
@@ -577,9 +579,13 @@
 
                 // 동작(생성, 삭제, 수정) factor
 
-                var pages = new List<Page>();
+                var factorDto = FactorDto.FactorToFactorDto(_selectedFactor);
+                var factorIndex = _factors.IndexOf(_selectedFactor);
+                var pageIndex = _pages.IndexOf(_selectedPage);
+                
+                var factorData = new FactorData();
 
-                await _hubConnection.SendAsync("SendDrawings", "shinwoo", pages);
+                await _hubConnection.SendAsync("SendDrawings", "shinwoo");
             }
         }
     }

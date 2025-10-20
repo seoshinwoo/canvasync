@@ -43,6 +43,21 @@ public class FactorText : Factor
         Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
     }
 
+    public FactorText(Factor factor)
+    {
+        TextBlocks[0].Text = "text..";
+
+        if (factor.Paint is not null)
+        {
+            TextBlocks[0].Paint = factor.Paint;
+        }
+
+        TextBlocks[0].Font = new SKFont() { Size = 30 };
+
+        TextBlocks[0].MeasureTextSize();
+        Box = factor.Box;
+    }
+
     public void MeasureTextSize()
     {
         TextBlocks[0].Width = Font.MeasureText(TextBlocks[0].Text);

@@ -140,8 +140,7 @@ public class FactorDto
         // FactorText 역직렬화..
         if (factorDto.FactorType is FactorType.Text)
         {
-            var factorText = new FactorText(string.Empty);
-            factorText = (FactorText)factor;
+            var factorText = new FactorText(factor);
 
             foreach (var textBlockDto in factorDto.TextBlockDtos ?? new List<TextBlockDto>())
             {
@@ -176,8 +175,7 @@ public class FactorDto
         // FactorPen 역직렬화..
         if (factorDto.FactorType is FactorType.Pen)
         {
-            var factorPen = new FactorPen(factor.Paint);
-            factorPen = (FactorPen)factor;
+            var factorPen = new FactorPen(factor);
 
             var path = new SKPath();
 

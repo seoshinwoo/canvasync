@@ -10,6 +10,16 @@ public class FactorPen : Factor
         PenPath = new SKPath();
         Paint = paint;
     }
+
+    public FactorPen(Factor factor)
+    {
+        if (factor.Paint is not null)
+        {
+            PenPath = new SKPath();
+            Paint = factor.Paint;
+            FactorType = FactorType.Pen;
+        }
+    }
     public override void Draw(SKCanvas canvas)
     {
         if (PenPath is not null)

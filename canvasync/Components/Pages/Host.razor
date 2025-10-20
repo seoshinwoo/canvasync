@@ -2,8 +2,10 @@
 @page "/host"
 @using PDFtoImage
 @using canvasync.Client.Pages
+@using Microsoft.AspNetCore.Components.WebAssembly.Hosting
 @inject Containers.StateContainer StateContainer
 @inject NavigationManager NavigationManager
+@inject IWebHostEnvironment WebHostEnvironment
 
 <div style="color: #5C6916; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
     
@@ -45,36 +47,110 @@
     private List<string> imageUrls = new();
     private bool IsConverting = false;
     private bool IsConvertingDone = false;
+    [Inject] IWebHostEnvironment hostEnvironment { get; set; }
+    private Type? currentComponent;
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine($"hostEnvironment.EnvironmentName : {hostEnvironment.EnvironmentName}");
+        if (hostEnvironment.EnvironmentName == "Development")
+        {
+            await TestFileSelect();
+        }
+    }
 
     private void GenerateAddress()
     {
         // _address = 
     }
 
+    private async Task TestFileSelect()
+    {
+        string filePath = "wwwroot/small_horiozntal_pdf_short.pdf"; 
+
+        // 2. MemoryStream을 생성합니다.
+        var memoryStream = new MemoryStream();
+
+        // 3. FileStream을 열어 MemoryStream으로 비동기 복사합니다.
+        using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        {
+            await fileStream.CopyToAsync(memoryStream);
+        }
+
+        // 4. (매우 중요) MemoryStream을 읽기 전에 포지션을 맨 앞으로 돌려놓습니다.
+        memoryStream.Position = 0;
+
+        StateContainer.PdfFileBytes = memoryStream.ToArray();
+
+        try
+        {
+            var images = PDFtoImage.Conversion.ToImages(StateContainer.PdfFileBytes);
+
+            imageUrls = new List<string>();
+
+            foreach (var img in images)
+            {
+                var streamImage = new MemoryStream();
+                img.Encode(streamImage, SkiaSharp.SKEncodedImageFormat.Png, 80);
+
+                // Base64 문자열로 인코딩하여 Data URL 생성
+                var base64String = Convert.ToBase64String(streamImage.ToArray());
+                var dataUrl = $"data:image/png;base64, {base64String}";
+
+                imageUrls.Add(dataUrl);
+            }
+
+            StateContainer.imageUrls = imageUrls;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"파일 변환 중 오류 발생 : {ex.Message}");
+        }
+        finally
+        {
+            // IsConverting = false;
+            IsConvertingDone = true;
+        }
+
+        StartPresentation();
+    }
+
     private async Task HandleFileSelection(InputFileChangeEventArgs e)
     {
         imageUrls?.Clear();
         IsConverting = true;
+        var maxFileSize = 500 * 1024 * 1024;
 
         var file = e.File;
         _fileName = file.Name;
-        var maxFileSize = 500 * 1024 * 1024;
-        Console.WriteLine($"file.Size : {file.Size}");
 
+        var pdfFile = e.File;
         if (file.Size > maxFileSize)
         {
             return;
         }
 
-        try
+        if (pdfFile is not null)
         {
-            using (var stream = file.OpenReadStream(maxFileSize))
             using (var ms = new MemoryStream())
             {
-                await stream.CopyToAsync(ms);
-                var pdfBytes = ms.ToArray();
+                try
+                {
+                    await pdfFile.OpenReadStream(maxFileSize).CopyToAsync(ms);
+                    StateContainer.PdfFileBytes = ms.ToArray();
+                }
+                 catch (JSDisconnectedException)
+                {
+                    Console.WriteLine("File upload was canceld by the user.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex}, An unexpected error occured during file upload");
+                }
+            }
 
-                var images = PDFtoImage.Conversion.ToImages(pdfBytes);
+            try
+            {
+                var images = PDFtoImage.Conversion.ToImages(StateContainer.PdfFileBytes);
 
                 imageUrls = new List<string>();
 
@@ -92,15 +168,15 @@
 
                 StateContainer.imageUrls = imageUrls;
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"파일 변환 중 오류 발생 : {ex.Message}");
-        }
-        finally
-        {
-            // IsConverting = false;
-            IsConvertingDone = true;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"파일 변환 중 오류 발생 : {ex.Message}");
+            }
+            finally
+            {
+                // IsConverting = false;
+                IsConvertingDone = true;
+            }
         }
     }
 

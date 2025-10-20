@@ -2,6 +2,7 @@
 @using SkiaSharp
 @using SkiaSharp.Views.Blazor
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
 @using canvasync.Library.Dtos
 @using canvasync.Library.Models;
 @using System.Windows.Markup
@@ -18,8 +19,8 @@
     <div class="top" style="background-color: #b6d029;">
         <h3></h3>
         <div class="button-group">
-            <button>Save</button>
-            <button>Print</button>
+            <button @onclick="DeleteAll">Save</button>
+            <button @onclick="Print">Print</button>
         </div>
     </div>
 
@@ -241,6 +242,7 @@
             PathEffect = SKPathEffect.CreateDash(new float[] { 10, 5 }, 0)
         };
 
+
         // PDF 이미지 띄우기
         if (_selectedPage is not null)
         {
@@ -297,7 +299,7 @@
     {
         _isMousePressed = true;
         var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
-        Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
+        // Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
 
         if (_selectedFactor is FactorPen)
         {
@@ -577,186 +579,64 @@
             {
                 Console.WriteLine("Send 함수 실행!!");
 
-                // 동작(생성, 삭제, 수정) factor
-
-                var factorDto = FactorDto.FactorToFactorDto(_selectedFactor);
-                var factorIndex = _factors.IndexOf(_selectedFactor);
-                var pageIndex = _pages.IndexOf(_selectedPage);
-                
-                var factorData = new FactorData();
-
                 await _hubConnection.SendAsync("SendDrawings", "shinwoo");
             }
         }
     }
 
-    @* private FactorDto FactorToFactorDto(int pageIndex)
+    private void DeleteAll()
     {
-        var factorDto = new FactorDto();
-        if (_selectedFactor is not null)
+        foreach (var page in _pages)
         {
-            factorDto.PageIndex = pageIndex;
-
-            factorDto.FactorType = _selectedFactor.FactorType;
-            factorDto.Left = _selectedFactor.Box.Left;
-            factorDto.Top = _selectedFactor.Box.Top;
-            factorDto.Right = _selectedFactor.Box.Right;
-            factorDto.Bottom = _selectedFactor.Box.Bottom;
-
-            if (_selectedFactor.Paint is not null)
-            {
-                factorDto.PaintStyle = _selectedFactor.Paint.Style.ToString();
-                factorDto.PaintStrokeWidth = _selectedFactor.Paint.StrokeWidth;
-                factorDto.PaintColor = _selectedFactor.Paint.Color.ToString();
-            }
-
-            if (_selectedFactor.Font is not null)
-            {
-                factorDto.FontSize = _selectedFactor.Font.Size;
-            }
-
-            if (_selectedFactor is FactorText factorText)
-            {
-                var factorTextDto = factorDto as FactorTextDto;
-
-                foreach (var textBlock in factorText.TextBlocks)
-                {
-                    var factorTextBlockDto = new TextBlockDto();
-
-                    factorTextBlockDto.Text = textBlock.Text;
-                    factorTextBlockDto.PaintStyle = textBlock.Paint.Style.ToString();
-                    factorTextBlockDto.PaintStrokeWidth = textBlock.Paint.StrokeWidth;
-                    factorTextBlockDto.PaintColor = textBlock.Paint.Color.ToString();
-                    factorTextBlockDto.FontSize = textBlock.Font.Size;
-                    factorTextBlockDto.Top = textBlock.Top;
-                    factorTextBlockDto.Left = textBlock.Left;
-
-                    factorTextDto.TextBlockDtos.Add(factorTextBlockDto);
-                }
-            }
-
-            if (_selectedFactor is FactorPen)
-            {
-
-            }
+            page.Factors = new();
         }
 
-        switch (_selectedFactor.FactorType)
-        {
-            case "rect":
-            case "circle":
-            case "line":
-                var factorDto = new FactorDto();
-                factorDto.PageIndex = pageIndex;
+        // StateHasChanged();
+    }
 
-                factorDto.FactorType = _selectedFactor.FactorType;
-                factorDto.Left = _selectedFactor.Box.Left;
-                factorDto.Top = _selectedFactor.Box.Top;
-                factorDto.Right = _selectedFactor.Box.Right;
-                factorDto.Bottom = _selectedFactor.Box.Bottom;
-
-                if (_selectedFactor.Paint is not null)
-                {
-                    factorDto.PaintStyle = _selectedFactor.Paint.Style.ToString();
-                    factorDto.PaintStrokeWidth = _selectedFactor.Paint.StrokeWidth;
-                    factorDto.PaintColor = _selectedFactor.Paint.Color.ToString();
-                }
-
-                if (_selectedFactor.Font is not null)
-                {
-                    factorDto.FontSize = _selectedFactor.Font.Size;
-                }
-                break;
-            case "text":
-                var factorTextDto = new FactorTextDto();
-
-                foreach (var textBlock in _selectedFactor.TextBlocks)
-                {
-                    var factorTextBlockDto = new TextBlockDto();
-
-                    factorTextBlockDto.Text = textBlock.Text;
-                    factorTextBlockDto.PaintStyle = textBlock.Paint.Style.ToString();
-                    factorTextBlockDto.PaintStrokeWidth = textBlock.Paint.StrokeWidth;
-                    factorTextBlockDto.PaintColor = textBlock.Paint.Color.ToString();
-                    factorTextBlockDto.FontSize = textBlock.Font.Size;
-                    factorTextBlockDto.Top = textBlock.Top;
-                    factorTextBlockDto.Left = textBlock.Left;
-
-                    factorTextDto.TextBlockDtos.Add(factorTextBlockDto);
-                }
-                break;
-            case "pen":
-                //
-                break;
-        }
-        
-
-        return factorDto;
-    } *@
-
-    @* private List<PageDto> DrawingsToDto(List<Page> pages)
+    private async Task Print()
     {
-        var pageDtos = new List<PageDto>();
-
-        foreach (var page in pages)
+        Console.WriteLine($"Print() 실행!!");
+        var drawingsDto = new DrawingsDto();
+        if (_imgSize is not null)
         {
-            if (page.Factors.Count == 0) { continue; }
-
-            var pageDto = new PageDto();
-            foreach (var factor in page.Factors)
-            {
-                switch (factor.FactorType)
-                {
-                    case "rect":
-                        //
-                        break;
-                    case "circle":
-                        //
-                        break;
-                    case "line":
-                        //
-                        break;
-                    case "text":
-                        //
-                        break;
-                    case "pen":
-                        {
-                            var factorPenDto = new FactorPenDto();
-                            var factorPen = (FactorPen)factor;
-                            using var iterator = factorPen.PenPath.CreateRawIterator();
-
-                            var points = new SKPoint[4];
-                            SKPathVerb verb;
-
-                            while ((verb = iterator.Next(points)) != SKPathVerb.Done)
-                            {
-                                var commandDto = new PathCommandDto
-                                {
-                                    Verb = verb.ToString()
-                                };
-
-                                int pointCount = verb switch
-                                {
-                                    SKPathVerb.Move => 1,
-                                    SKPathVerb.Line => 2,
-                                    SKPathVerb.Quad => 3,
-                                    SKPathVerb.Cubic => 4,
-                                    SKPathVerb.Conic => 4,
-                                    SKPathVerb.Close => 5,
-                                };
-
-                                commandDto.Points.AddRange(points.Take(pointCount).Select(p => (p.X, p.Y)));
-                                factorPenDto.Pens.Add(commandDto);
-                            }
-                            pageDto.FactorDtos.Add(factorPenDto);
-                        }
-                        break;
-                }
-            }
+            drawingsDto.PageDtos = PageDto.PagesToPageDtos(_pages);
+            Console.WriteLine($"drawingsDto.PageDtos : {drawingsDto.PageDtos.Count()}");
+            drawingsDto.PageWidth = _imgSize.width;
+            drawingsDto.PageHeight = _imgSize.height;
+            drawingsDto.FactorRatio = _ratio;
         }
 
-        return pageDtos;
-    } *@
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var drawingsDtoJson = JsonSerializer.Serialize(drawingsDto);
+            content.Add(new StringContent(drawingsDtoJson), "drawings");
+            var response = await HttpClient.PostAsync("http://localhost:5175/api/pdfdownload/make-pdf", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var fileName = response.Content.Headers.ContentDisposition?.FileName ?? "download.pdf";
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+                await JSRuntime.InvokeVoidAsync("PdfFileDownload", fileName, fileBytes);
+            }
+            else
+            {
+                // 에러 발생!!
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
+        }
+        finally
+        {
+            // loading 같은 bool 객체에 false 넣어주면 될 듯..
+        }
+    }
+
+    
 
     // ##########################################################
     // 초반 PDF 이미지 크기 설정

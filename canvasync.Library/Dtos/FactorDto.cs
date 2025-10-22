@@ -20,10 +20,10 @@ public class FactorDto
     public bool PaintIsAntialias { get; set; }
 
     // FactorText 직렬화/역직렬화를 위해..
-    public List<TextBlockDto>? TextBlockDtos { get; set; }
+    public List<TextBlockDto> TextBlockDtos { get; set; } = new();
 
     // FactorPen 직렬화/역직렬화를 위해..
-    public List<PenPathDto>? PenPathDtos { get; set; }
+    public PenPathDto PenPathDto { get; set; } = new();
 
 
     public static FactorDto FactorToFactorDto(Factor factor)
@@ -77,38 +77,52 @@ public class FactorDto
             }
         }
 
+        if (factor is FactorPen)
+        {
+            Console.WriteLine($"FactorPen!!!!!!!!!");
+        }
+
         // TextPen 직렬화..
         if (factor.FactorType is FactorType.Pen)
         {
+            // var factorPen = new FactorPen(factor);
             FactorPen factorPen = (FactorPen)factor;
 
-            var penPathsDto = new PenPathsDto();
-            using var iterator = factorPen.PenPath.CreateRawIterator();
+            var penPathDto = new PenPathDto();
+            penPathDto.PenPathData = factorPen.PenPath.ToSvgPathData();
+            factorDto.PenPathDto = penPathDto;
+            Console.WriteLine($"factorDto.PenPathDto.PenPathData : {factorDto.PenPathDto.PenPathData.Length}");
 
-            var points = new SKPoint[4];
-            SKPathVerb verb;
+            // FactorPen factorPen = (FactorPen)factor;
+            // var penPathsDto = new PenPathsDto();
+            // using var iterator = factorPen.PenPath.CreateRawIterator();
 
-            while ((verb = iterator.Next(points)) != SKPathVerb.Done)
-            {
-                var penPathDto = new PenPathDto
-                {
-                    Verb = verb.ToString() // "Move", "Quad" 등의 문자열로 저장
-                };
+            // var points = new SKPoint[4];
+            // SKPathVerb verb;
 
-                int pointCount = verb switch
-                {
-                    SKPathVerb.Move => 1,
-                    SKPathVerb.Line => 2,
-                    SKPathVerb.Quad => 3,
-                    SKPathVerb.Conic => 3,
-                    SKPathVerb.Cubic => 4,
-                    SKPathVerb.Close => 0,
-                    _ => 0
-                };
+            // while ((verb = iterator.Next(points)) != SKPathVerb.Done)
+            // {
+            //     var penPathDto = new PenPathDto
+            //     {
+            //         Verb = verb.ToString() // "Move", "Quad" 등의 문자열로 저장
+            //     };
 
-                penPathDto.Points.AddRange(points.Take(pointCount).Select(p => (p.X, p.Y)));
-                penPathsDto.PenPaths.Add(penPathDto);
-            }
+            //     int pointCount = verb switch
+            //     {
+            //         SKPathVerb.Move => 1,
+            //         SKPathVerb.Line => 2,
+            //         SKPathVerb.Quad => 3,
+            //         SKPathVerb.Conic => 3,
+            //         SKPathVerb.Cubic => 4,
+            //         SKPathVerb.Close => 0,
+            //         _ => 0
+            //     };
+
+            //     penPathDto.Points.AddRange(points.Take(pointCount).Select(p => (p.X, p.Y)));
+            //     penPathsDto.PenPaths.Add(penPathDto);
+            // }
+
+            // factorDto.PenPathDtos = penPathsDto.PenPaths;
         }
 
         return factorDto;
@@ -176,43 +190,50 @@ public class FactorDto
         if (factorDto.FactorType is FactorType.Pen)
         {
             var factorPen = new FactorPen(factor);
+            Console.WriteLine($"factorDto.PenPathDto.PenPathData : {factorDto.PenPathDto.PenPathData.Length}");
+            factorPen.PenPath = SKPath.ParseSvgPathData(factorDto.PenPathDto.PenPathData);
 
-            var path = new SKPath();
 
-            foreach (var penPath in factorDto.PenPathDtos ?? new List<PenPathDto>())
-            {
-                switch (penPath.Verb)
-                {
-                    case "Move":
-                        if (penPath.Points.Any())
-                        {
-                            path.MoveTo(penPath.Points[0].X, penPath.Points[0].Y);
-                        }
-                        break;
-                    case "Line":
-                        if (penPath.Points.Count >= 2)
-                        {
-                            path.LineTo(penPath.Points[1].X, penPath.Points[1].Y);
-                        }
-                        break;
-                    case "Quad":
-                        if (penPath.Points.Count >= 3)
-                        {
-                            path.QuadTo(penPath.Points[1].X, penPath.Points[1].Y, penPath.Points[2].X, penPath.Points[2].Y);
-                        }
-                        break;
-                    case "Cubic":
-                        if (penPath.Points.Count >= 4)
-                        {
-                            path.CubicTo(penPath.Points[1].X, penPath.Points[1].Y, penPath.Points[2].X, penPath.Points[2].Y, penPath.Points[3].X, penPath.Points[3].Y);
-                        }
-                        break;
-                    case "Close":
-                        path.Close();
-                        break;
-                }
-            }
 
+            // var path = new SKPath();
+
+            // Console.WriteLine($"factorDto.PenPathDtos : {factorDto.PenPathDtos.Count()}");
+            // foreach (var penPath in factorDto.PenPathDtos ?? new List<PenPathDto>())
+            // {
+            //     switch (penPath.Verb)
+            //     {
+            //         case "Move":
+            //             if (penPath.Points.Any())
+            //             {
+            //                 path.MoveTo(penPath.Points[0].X, penPath.Points[0].Y);
+            //             }
+            //             break;
+            //         case "Line":
+            //             if (penPath.Points.Count >= 2)
+            //             {
+            //                 path.LineTo(penPath.Points[1].X, penPath.Points[1].Y);
+            //             }
+            //             break;
+            //         case "Quad":
+            //             if (penPath.Points.Count >= 3)
+            //             {
+            //                 path.QuadTo(penPath.Points[1].X, penPath.Points[1].Y, penPath.Points[2].X, penPath.Points[2].Y);
+            //             }
+            //             break;
+            //         case "Cubic":
+            //             if (penPath.Points.Count >= 4)
+            //             {
+            //                 path.CubicTo(penPath.Points[1].X, penPath.Points[1].Y, penPath.Points[2].X, penPath.Points[2].Y, penPath.Points[3].X, penPath.Points[3].Y);
+            //             }
+            //             break;
+            //         case "Close":
+            //             path.Close();
+            //             break;
+            //     }
+            // }
+
+            // factorPen.PenPath = path;
+            Console.WriteLine($"factorPen.PenPath : {factorPen.PenPath.PointCount}");
             return factorPen; 
         }
 
@@ -241,12 +262,14 @@ public class TextBlockDto
 
 public class PenPathsDto
 {
-    public List<PenPathDto> PenPaths { get; set; } = new();
+    public List<PenPathDto> PenPathDtos { get; set; } = new();
 }
 
 public class PenPathDto
 {
-    // "Move", "Line", "Quad", "Cubic", "Close"
-    public string Verb { get; set; } = string.Empty;
-    public List<(float X, float Y)> Points { get; set; } = new();
+    public string PenPathData { get; set; } = string.Empty;
+    // public string? PenPathPaintColor { get; set; }
+    // public SKPaintStyle PenPathPaintStyle { get; set; }
+    // public float PenPathPaintStrokeWidth { get; set; }
+    // public bool PenPathPaintIsAntialias { get; set; }
 }

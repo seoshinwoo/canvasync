@@ -144,13 +144,31 @@
     
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine($"멤버 타입 : {memberType}");
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/canvashub"))
             .Build();
 
-        _hubConnection.On<string, FactorData>("ReceiveDrawings", (user, factor) => 
+        _hubConnection.On<string, FactorData>("ReceiveDrawings", (user, factorData) => 
         {
+            var factor = FactorDto.FactorDtoToFactor(factorData.FactorDto);
+            if (factor.FactorType is FactorType.Pen)
+            {
+                var penfactor = (FactorPen)factor;
+            }
+
+            switch (factorData.FactorAction)
+            {
+                case "Add":
+                    _pages[factorData.PageIndex].Factors.Add(factor);
+                    break;
+                case "Delete":
+                    _pages[factorData.PageIndex].Factors.RemoveAt(factorData.FactorIndex);
+                    break;
+                case "Update":
+                    _pages[factorData.PageIndex].Factors[factorData.FactorIndex] = factor;
+                    break;
+            }
+
             InvokeAsync(StateHasChanged);
         });
 
@@ -176,14 +194,6 @@
                 page.ImgData = imgUrl;
                 page.Image = LoadImageFromBase64(imgUrl);
                 _pages.Add(page);
-            }
-
-            // _selectedPage = _pages[0];
-
-            if (memberType == "guest")
-            {
-                Console.WriteLine($"page 개수 : {_pages.Count}");
-                Console.WriteLine($"hostPage 개수 : {_hostPages.Count}");
             }
         }
         catch (Exception ex)
@@ -342,13 +352,6 @@
                 }
             }
         }
-        if (_selectedPage is not null)
-        {
-            if (_selectedPage.Factors is not null)
-            {
-                Console.WriteLine($"factor의 개수 : {_selectedPage.Factors.Count}");
-            }
-        }
     }
 
     private async Task MouseMove(MouseEventArgs args)
@@ -400,6 +403,18 @@
                 _factorPen?.PenPath.QuadTo(_penPoint, new SKPoint(mousePoint.X, mousePoint.Y));
                 _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
             }
+
+
+            if (memberType == "host")
+            {
+                if (_selectedPage is not null && _selectedFactor is not null)
+                {
+                    var pageIndex = _pages.IndexOf(_selectedPage);
+                    var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+                    await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+                }
+            }
         }
     }
 
@@ -419,11 +434,14 @@
             _penPoint = new();
             if (_factorPen is not null)
             {
-                _selectedPage?.Factors?.Add(_factorPen);
+                // _selectedPage?.Factors?.Add(_factorPen);
                 
                 if (memberType == "host")
                 {
-                    await Send();
+                    var pageIndex = _pages.IndexOf(_selectedPage);
+                    var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+                    await Send(pageIndex, factorIndex, "Update", _selectedFactor);
                 }
             }
         }
@@ -465,7 +483,7 @@
         _selectedColor = e.Value?.ToString() ?? "#000000";
     }
 
-    private void AddFactor(FactorType type)
+    private async Task AddFactor(FactorType type)
     {
 
         if (_selectedPage is null) return;
@@ -528,6 +546,14 @@
         }
 
         _selectedFactor.FactorType = type;
+
+        if (memberType == "host")
+        {
+            var pageIndex = _pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+            await Send(pageIndex, factorIndex, "Add", _selectedFactor);
+        }
     }
 
     private void DrawThumbnail(SKPaintGLSurfaceEventArgs e, Page page)
@@ -571,15 +597,20 @@
         }
     }
 
-    private async Task Send()
+    private async Task Send(int pageIndex, int factorIndex, string factorAction, Factor factor)
     {
         if (_hubConnection is not null)
         {
             if (_selectedFactor is not null)
             {
-                Console.WriteLine("Send 함수 실행!!");
-
-                await _hubConnection.SendAsync("SendDrawings", "shinwoo");
+                var factorData = new FactorData();
+                factorData.LectureId = Guid.NewGuid().ToString();
+                factorData.PageIndex = pageIndex;
+                factorData.FactorIndex = factorIndex;
+                factorData.FactorAction = factorAction;
+                factorData.FactorDto = FactorDto.FactorToFactorDto(factor);
+                
+                await _hubConnection.SendAsync("SendDrawings", "shinwoo", factorData);
             }
         }
     }
@@ -590,18 +621,14 @@
         {
             page.Factors = new();
         }
-
-        // StateHasChanged();
     }
 
     private async Task Print()
     {
-        Console.WriteLine($"Print() 실행!!");
         var drawingsDto = new DrawingsDto();
         if (_imgSize is not null)
         {
             drawingsDto.PageDtos = PageDto.PagesToPageDtos(_pages);
-            Console.WriteLine($"drawingsDto.PageDtos : {drawingsDto.PageDtos.Count()}");
             drawingsDto.PageWidth = _imgSize.width;
             drawingsDto.PageHeight = _imgSize.height;
             drawingsDto.FactorRatio = _ratio;

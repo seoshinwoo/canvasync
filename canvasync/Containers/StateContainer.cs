@@ -13,6 +13,7 @@ namespace canvasync.Containers;
 
 public class StateContainer
 {
+    public Dictionary<string, List<Page>> LectureDrawings { get; set; } = new();
     public bool _isHome = true;
     public Type? ComponentType { get; private set; }
     public byte[]? PdfFileBytes { get; set; }

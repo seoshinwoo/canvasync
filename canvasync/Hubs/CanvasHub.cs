@@ -23,6 +23,9 @@ public class CanvasHub : Hub
 
         var factor = FactorDto.FactorDtoToFactor(factorData.FactorDto);
 
+        Console.WriteLine($"lecture.Pages[1].Factors.Count() : {lecture.Pages[1].Factors.Count()}");
+        Console.WriteLine($"factorData.FactorIndex : {factorData.FactorIndex}");
+
         switch (factorData.FactorAction)
         {
             case "Add":

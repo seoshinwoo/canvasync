@@ -64,9 +64,10 @@ public class Factor
         {"RightBottom", new SKPoint(Box.Right, Box.Bottom)},
     };
 
-    public virtual void Draw(SKCanvas canvas)
+
+    public virtual void Draw(SKCanvas canvas, float ratio = 1f, float x = 0, float y = 0)
     {
-        
+
     }
 }
 

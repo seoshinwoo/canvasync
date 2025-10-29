@@ -1,11 +1,12 @@
 @rendermode InteractiveServer
 @page "/guest"
+@using Microsoft.AspNetCore.Mvc
 @inject Containers.StateContainer StateContainer
 @inject NavigationManager NavigationManager
 
 
 <div style="color: #5C6916; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-    @* 주소 입력 : <input @bind="_address"/> *@
+    주소 입력 : <input @bind="_lectureId"/>
     @if (!_isPresentationOpened)
     {
         <p style="color: red">아직 강의가 오픈되지 않았습니다.</p>
@@ -16,13 +17,14 @@
 
 @code
 {
-    private string _address = string.Empty;
+    private string _lectureId = string.Empty;
     private bool _isPresentationOpened = true;
     private void Enter()
     {
-        if (StateContainer.imageUrls.Count > 0)
+        var lecture = StateContainer.Lectures.Where(lec => lec.Id == _lectureId).FirstOrDefault();
+        if (lecture.Pages.Count > 0)
         {
-            NavigationManager.NavigateTo("/drawing/guest");
+            NavigationManager.NavigateTo($"/drawing/guest/{_lectureId}");
         }
         else
         {

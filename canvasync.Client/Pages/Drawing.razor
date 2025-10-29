@@ -8,7 +8,7 @@
 @using System.Windows.Markup
 @using System.Drawing
 @rendermode InteractiveWebAssembly
-@page "/drawing/{memberType}"
+@page "/drawing/{memberType}/{lectureId}"
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -77,7 +77,7 @@
                 {
                     if (_selectedFactor.Paint is null) { _selectedFactor.Paint = new SKPaint(); }
                         
-                    <textarea @bind="factorText.TextBlocks[0]" @oninput="TextChanged"/> 
+                    <textarea @bind="factorText.Text" @oninput="TextChanged"/> 
                 }
 
                 @if (_selectedFactor is FactorPen)
@@ -114,6 +114,8 @@
 {
     [Parameter]
     public string? memberType { get; set; }
+    [Parameter]
+    public string? lectureId { get; set; }
     private HubConnection? _hubConnection;
     private List<string> _imgUrls = new();
     private List<Page> _pages = new();
@@ -122,7 +124,6 @@
     private List<Factor> _factors = new();
     private record ImgSize(int width, int height);
     private ImgSize? _imgSize;
-    private float _startY;
     private string _imgSrc = string.Empty;
     private Factor? _selectedFactor;
     private string _selectedColor = "#000000";
@@ -140,6 +141,8 @@
     private bool _pageLoadDone = false;
     float _canvasWidth;
     float _canvasHeight;
+    private float _startX;
+    private float _startY;
     float _ratio;
     
     protected override async Task OnInitializedAsync()
@@ -183,17 +186,19 @@
 
         try
         {
-            _imgUrls = await HttpClient.GetFromJsonAsync<List<string>>("http://localhost:5175/api/pdfimages") ?? new List<string>();
-            var count = 0;
+            var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>($"http://localhost:5175/api/pdfimages/{lectureId}") ?? new List<PageDto>();
 
-            foreach (var imgUrl in _imgUrls)
+            var pages = PageDto.PageDtosToPages(pageDtos);
+            foreach (var page in pages)
             {
-                count++;
-                var page = new Page();
-                page.PageIndex = count;
-                page.ImgData = imgUrl;
-                page.Image = LoadImageFromBase64(imgUrl);
+                page.Image = LoadImageFromBase64(page.ImgData);
                 _pages.Add(page);
+            }
+
+            foreach (var page in pages)
+            {
+                Console.WriteLine($"page 이미지 크기 -> Width : {page.Width}, Height : {page.Height}");
+                // Console.WriteLine($"")
             }
         }
         catch (Exception ex)
@@ -206,9 +211,9 @@
     {
         if (_imgSize is null)
         {
-            await GetImageSizes(_imgUrls);
-            _pageLoadDone = true;
+            // await GetImageSizes(_imgUrls);
         }
+        _pageLoadDone = true;
     }
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
@@ -256,9 +261,13 @@
         // PDF 이미지 띄우기
         if (_selectedPage is not null)
         {
+            var pageWidth = _selectedPage.Width;
+            var pageHeight = _selectedPage.Height;
+
             // 이미지의 경계가 보이도록 0.99f 를 곱해줌
-            _ratio = _imgSize?.width != 0 ? (_canvasWidth * 0.99f)/ (float)_imgSize!.width : 1;
-            _startY = (_canvasHeight - (float)_imgSize.height * _ratio) / 2;
+            _ratio = pageWidth != 0 ? (_canvasWidth * 0.99f)/ (float)pageWidth : 1;
+            _startX = 5;
+            _startY = (_canvasHeight - (float)pageHeight * _ratio) / 2;
             var rectPaint = new SKPaint {
                 IsAntialias = true,
                 Color = new SKColor(242, 42, 99),
@@ -266,7 +275,7 @@
             };
 
             // 이미지의 경계가 보이도록 0이 아닌 5부터 시작
-            var rect = new SKRect(5, _startY, (float)_imgSize.width * _ratio, _startY + (float)_imgSize.height * _ratio);
+            var rect = new SKRect(_startX, _startY, (float)pageWidth * _ratio, _startY + (float)pageHeight * _ratio);
             canvas.DrawRect(rect, borderPaint);
             canvas.DrawImage(_selectedPage.Image, rect);
 
@@ -274,7 +283,9 @@
             {
                 foreach (var factor in _selectedPage.Factors)
                 {
-                    factor.Draw(canvas);
+                    // factor.Draw(canvas, _ratio, _startX, _startY);
+                    Console.WriteLine($"_ratio : {_ratio}");
+                    factor.Draw(canvas, _ratio, _startX, _startY);
                 }
             }
 
@@ -284,7 +295,7 @@
                 {
                     foreach (var factor in _hostPages[_selectedPage.PageIndex].Factors)
                     {
-                        factor.Draw(canvas);
+                        factor.Draw(canvas, _ratio, _startX, _startY);
                     }
                 }
             }
@@ -308,8 +319,10 @@
     private void MouseDown(MouseEventArgs args)
     {
         _isMousePressed = true;
-        var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
+        var mousePoint = new SKPoint(((float)args.OffsetX - _startX) / _ratio, ((float)args.OffsetY - _startY) / _ratio);
+        // var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
         // Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
+        
 
         if (_selectedFactor is FactorPen)
         {
@@ -321,7 +334,8 @@
             if (_selectedPage is not null && _selectedPage.Factors is not null)
             {
                 // 주황색 점을 조금이라도 factor 바깥 방향에서 클릭하려고 하면 선택이 풀려버리는 것을 막는 코드 필요..
-
+                Console.WriteLine($"_selectedPage.Factors[0].Box -> Left : {_selectedPage.Factors[0].Box.Left}, Right : {_selectedPage.Factors[0].Box.Right}, Top : {_selectedPage.Factors[0].Box.Top}, Bottom : {_selectedPage.Factors[0].Box.Bottom}");
+                Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
                 var factor = _selectedPage.Factors.Where(f => f.Box.Contains(mousePoint.X, mousePoint.Y)).LastOrDefault();
                 if (factor is not null)
                 {
@@ -358,7 +372,9 @@
     {
         if (_isMousePressed)
         {
-            var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
+            var mousePoint = new SKPoint(((float)args.OffsetX - _startX) / _ratio, ((float)args.OffsetY - _startY) / _ratio);
+            // var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
+            // Console.WriteLine($"현재 점 위치!! : ({mousePoint.X}, {mousePoint.Y})");
 
             if (_selectedFactor is not null && _selectedFactor is not FactorPen)
             {
@@ -400,10 +416,11 @@
             }
             else if (_selectedFactor is FactorPen)
             {
+                // Console.WriteLine($"mousePoint -> X : {mousePoint.X}, Y : {mousePoint.Y}");
                 _factorPen?.PenPath.QuadTo(_penPoint, new SKPoint(mousePoint.X, mousePoint.Y));
                 _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
+                Console.WriteLine($"_factorPen에 들어있는거!! : {_factorPen.PenPath.Points.Last()}");
             }
-
 
             if (memberType == "host")
             {
@@ -434,7 +451,9 @@
             _penPoint = new();
             if (_factorPen is not null)
             {
-                // _selectedPage?.Factors?.Add(_factorPen);
+                _selectedPage?.Factors?.Add(_factorPen);
+                // Console.WriteLine($"_factorPen 개수 : {_factorPen.PenPath.PointCount}");
+                // Console.WriteLine($"처음 : ({_factorPen.PenPath.Points.First().X}, {_factorPen.PenPath.Points.First().Y}), 마지막 : ({_factorPen.PenPath.Points.Last().X}, {_factorPen.PenPath.Points.Last().Y})");
                 
                 if (memberType == "host")
                 {
@@ -494,26 +513,43 @@
         }
 
         var factor = new Factor();
+
+        var left = _canvasWidth / 5 - _startX;
+        var top = _canvasHeight / 5 - _startY;
+        var width = _canvasWidth / 5;
+        var height = _canvasHeight / 5;
+        var rect = new SKRect(left / _ratio, top / _ratio, (left + width) / _ratio, (top + height) / _ratio);
+        
+        Console.WriteLine($"새로 생성된 rect -> Left : {rect.Left}, Right : {rect.Right}, Top : {rect.Top}, Bottom : {rect.Bottom}");
+        @* Console.WriteLine($"_ratio : {_ratio}");
+        Console.WriteLine($"_canvasWidth : {_canvasWidth}");
+        Console.WriteLine($"_canvasHeight : {_canvasHeight}");
+        Console.WriteLine($"(_canvasWidth / 2) / _ratio : {(_canvasWidth / 2) / _ratio}");
+        Console.WriteLine($"(_startY + _canvasHeight / 2) / _ratio : {(_startY + _canvasHeight / 2) / _ratio}");
+        Console.WriteLine($"((_canvasWidth / 2) + (_canvasWidth / 5)) / _ratio : {((_canvasWidth / 2) + (_canvasWidth / 5)) / _ratio}");
+        Console.WriteLine($"((_startY + _canvasHeight / 2) + (_canvasHeight / 5)) / _ratio) : {((_startY + _canvasHeight / 2) + (_canvasHeight / 5)) / _ratio}"); *@
         switch (type)
         {
             case FactorType.Rect:
                 var factorRect = new FactorRect();
-                factorRect.Box = new SKRect(100, _startY, 200, _startY + 100);
-                factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
+                factorRect.Box = rect;
+                factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
                 _selectedPage.Factors.Add(factorRect);
                 _selectedFactor = factorRect;
+
+                Console.WriteLine($"_selectedFactor 의 크기 -> Left : {_selectedFactor.Box.Left}, Top : {_selectedFactor.Box.Top}, Width : {_selectedFactor.Box.Width}, Height : {_selectedFactor.Box.Height}");
                 break;
             case FactorType.Circle:
                 var factorCircle = new FactorCircle();
-                factorCircle.Box = new SKRect(100, _startY, 200, _startY + 100);
-                factorCircle.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
+                factorCircle.Box = rect;
+                factorCircle.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
                 _selectedPage.Factors.Add(factorCircle);
                 _selectedFactor = factorCircle;
                 break;
             case FactorType.Line:
                 var factorLine = new FactorLine();
-                factorLine.Box = new SKRect(100, _startY, 200, _startY + 100);
-                factorLine.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5, IsAntialias = true };
+                factorLine.Box = rect;
+                factorLine.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
                 _selectedPage.Factors.Add(factorLine);
                 _selectedFactor = factorLine;
                 break;
@@ -524,7 +560,7 @@
                 };
                 var factorText = new FactorText(_selectedColor);
                 factorText.Paint = new SKPaint(){ Color = SKColor.Parse(_selectedColor) };
-                factorText.Box = new SKRect(100, _startY, 100 + factorText.Box.Width, _startY + factorText.Box.Height);
+                factorText.Box = new SKRect(rect.Left, rect.Right, rect.Left + (factorText.Box.Width) / _ratio, (_startY + factorText.Box.Height) / _ratio);
                 _selectedPage.Factors.Add(factorText);
                 _selectedFactor = factorText;
                 break;
@@ -556,7 +592,7 @@
         }
     }
 
-    private void DrawThumbnail(SKPaintGLSurfaceEventArgs e, Page page)
+    @* private void DrawThumbnail(SKPaintGLSurfaceEventArgs e, Page page)
     {
         var canvas = e.Surface.Canvas;
         canvas.Clear(SKColors.Beige);
@@ -595,7 +631,7 @@
                 }
             }
         }
-    }
+    } *@
 
     private async Task Send(int pageIndex, int factorIndex, string factorAction, Factor factor)
     {
@@ -604,7 +640,7 @@
             if (_selectedFactor is not null)
             {
                 var factorData = new FactorData();
-                factorData.LectureId = Guid.NewGuid().ToString();
+                factorData.LectureId = lectureId;
                 factorData.PageIndex = pageIndex;
                 factorData.FactorIndex = factorIndex;
                 factorData.FactorAction = factorAction;
@@ -626,13 +662,7 @@
     private async Task Print()
     {
         var drawingsDto = new DrawingsDto();
-        if (_imgSize is not null)
-        {
-            drawingsDto.PageDtos = PageDto.PagesToPageDtos(_pages);
-            drawingsDto.PageWidth = _imgSize.width;
-            drawingsDto.PageHeight = _imgSize.height;
-            drawingsDto.FactorRatio = _ratio;
-        }
+        drawingsDto.PageDtos = PageDto.PagesToPageDtos(_pages);
 
         try
         {
@@ -668,7 +698,7 @@
     // ##########################################################
     // 초반 PDF 이미지 크기 설정
     // ##########################################################
-    private async Task GetImageSizes(List<string> datas)
+    @* private async Task GetImageSizes(List<string> datas)
     {
         if (datas == null || datas.Count() == 0)
         {
@@ -686,7 +716,7 @@
 
             _imgSize = new ImgSize(size.width, size.height);
         }
-    }
+    } *@
     private SKImage LoadImageFromBase64(string base64)
     {
         // 1. data URI prefix 제거

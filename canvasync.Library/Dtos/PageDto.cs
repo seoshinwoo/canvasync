@@ -5,8 +5,8 @@ namespace canvasync.Library.Dtos;
 
 public class PageDto
 {
-    public string PDFId { get; set; } = string.Empty;
     public int PageIndex { get; set; } = 0;
+    public string ImgData { get; set; } = string.Empty;
     public int Width { get; set; } = 0;
     public int Height { get; set; } = 0;
     public List<FactorDto> FactorDtos { get; set; } = new();
@@ -19,8 +19,8 @@ public class PageDto
         {
             var pageDto = new PageDto();
 
-            pageDto.PDFId = page.PDFId;
             pageDto.PageIndex = page.PageIndex;
+            pageDto.ImgData = page.ImgData;
             pageDto.Width = page.Width;
             pageDto.Height = page.Height;
 
@@ -32,7 +32,32 @@ public class PageDto
 
             pageDtos.Add(pageDto);
         }
-        
+
         return pageDtos;
+    }
+    
+    public static List<Page> PageDtosToPages(List<PageDto> pageDtos)
+    {
+        var pages = new List<Page>();
+
+        foreach (var pageDto in pageDtos)
+        {
+            var page = new Page();
+
+            page.PageIndex = pageDto.PageIndex;
+            page.ImgData = pageDto.ImgData;
+            page.Width = pageDto.Width;
+            page.Height = pageDto.Height;
+
+            foreach (var factorDto in pageDto.FactorDtos)
+            {
+                var factor = FactorDto.FactorDtoToFactor(factorDto);
+                page.Factors.Add(factor);
+            }
+
+            pages.Add(page);
+        }
+
+        return pages;
     }
 }

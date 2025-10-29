@@ -77,11 +77,6 @@ public class FactorDto
             }
         }
 
-        if (factor is FactorPen)
-        {
-            Console.WriteLine($"FactorPen!!!!!!!!!");
-        }
-
         // TextPen 직렬화..
         if (factor.FactorType is FactorType.Pen)
         {
@@ -91,7 +86,6 @@ public class FactorDto
             var penPathDto = new PenPathDto();
             penPathDto.PenPathData = factorPen.PenPath.ToSvgPathData();
             factorDto.PenPathDto = penPathDto;
-            Console.WriteLine($"factorDto.PenPathDto.PenPathData : {factorDto.PenPathDto.PenPathData.Length}");
 
             // FactorPen factorPen = (FactorPen)factor;
             // var penPathsDto = new PenPathsDto();
@@ -190,7 +184,7 @@ public class FactorDto
         if (factorDto.FactorType is FactorType.Pen)
         {
             var factorPen = new FactorPen(factor);
-            Console.WriteLine($"factorDto.PenPathDto.PenPathData : {factorDto.PenPathDto.PenPathData.Length}");
+            // Console.WriteLine($"factorDto.PenPathDto.PenPathData : {factorDto.PenPathDto.PenPathData.Length}");
             factorPen.PenPath = SKPath.ParseSvgPathData(factorDto.PenPathDto.PenPathData);
 
 
@@ -233,7 +227,6 @@ public class FactorDto
             // }
 
             // factorPen.PenPath = path;
-            Console.WriteLine($"factorPen.PenPath : {factorPen.PenPath.PointCount}");
             return factorPen; 
         }
 

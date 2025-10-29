@@ -23,11 +23,23 @@ public class FactorPen : Factor
     }
 
     
-    public override void Draw(SKCanvas canvas)
+    public override void Draw(SKCanvas canvas, float ratio = 1f, float x = 0, float y = 0)
     {
         if (PenPath is not null)
         {
-            canvas.DrawPath(PenPath, Paint);
+            // Console.WriteLine($"처음 : ({PenPath.Points.First().X}, {PenPath.Points.First().Y}), 마지막 : ({PenPath.Points.Last().X}, {PenPath.Points.Last().Y})");
+            SKMatrix transformMatrix = SKMatrix.CreateIdentity();
+
+            transformMatrix.ScaleX = ratio;
+            transformMatrix.ScaleY = ratio;
+            transformMatrix.TransX = x;
+            transformMatrix.TransY = y;
+
+            var path = new SKPath();
+
+            PenPath.Transform(transformMatrix, path);
+            
+            canvas.DrawPath(path, Paint);
         }
     }
 }

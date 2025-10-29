@@ -3,6 +3,7 @@
 @using PDFtoImage
 @using canvasync.Client.Pages
 @using Microsoft.AspNetCore.Components.WebAssembly.Hosting
+@using canvasync.Library.Models
 @inject Containers.StateContainer StateContainer
 @inject NavigationManager NavigationManager
 @inject IWebHostEnvironment WebHostEnvironment
@@ -14,7 +15,7 @@
         <label for="file-input" class="btn-custom-style">
             파일 선택 📂
         </label>
-        <InputFile id="file-input" OnChange="HandleFileSelection" style="display: none;" />
+        @* <InputFile id="file-input" OnChange="HandleFileSelection" style="display: none;" /> *@
     }
     else if (!IsConvertingDone)
     {
@@ -44,11 +45,12 @@
 {
     private string _address = string.Empty;
     private string _fileName = string.Empty;
-    private List<string> imageUrls = new();
+    private List<string> _imageUrls = new();
     private bool IsConverting = false;
     private bool IsConvertingDone = false;
     [Inject] IWebHostEnvironment hostEnvironment { get; set; }
     private Type? currentComponent;
+    private Lecture? _lecture;
     protected override async Task OnInitializedAsync()
     {
         Console.WriteLine($"hostEnvironment.EnvironmentName : {hostEnvironment.EnvironmentName}");
@@ -65,6 +67,9 @@
 
     private async Task TestFileSelect()
     {
+        _lecture = new Lecture();
+        _lecture.FileName = "LecturePDF.pdf";
+
         string filePath = "wwwroot/small_horiozntal_pdf_short.pdf"; 
 
         // 2. MemoryStream을 생성합니다.
@@ -79,13 +84,14 @@
         // 4. (매우 중요) MemoryStream을 읽기 전에 포지션을 맨 앞으로 돌려놓습니다.
         memoryStream.Position = 0;
 
-        StateContainer.PdfFileBytes = memoryStream.ToArray();
+        _lecture.PdfFileBytes = memoryStream.ToArray();
 
         try
         {
-            var images = PDFtoImage.Conversion.ToImages(StateContainer.PdfFileBytes);
+            var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
 
-            imageUrls = new List<string>();
+            _imageUrls = new List<string>();
+            var count = 0;
 
             foreach (var img in images)
             {
@@ -96,10 +102,19 @@
                 var base64String = Convert.ToBase64String(streamImage.ToArray());
                 var dataUrl = $"data:image/png;base64, {base64String}";
 
-                imageUrls.Add(dataUrl);
-            }
+                // _imageUrls.Add(dataUrl);
 
-            StateContainer.imageUrls = imageUrls;
+                var page = new Page();
+
+                page.PageIndex = count;
+                page.ImgData = dataUrl;
+                page.Width = img.Width;
+                page.Height = img.Height;
+
+                _lecture.Pages.Add(page);
+
+                count++;
+            }
         }
         catch (Exception ex)
         {
@@ -111,12 +126,16 @@
             IsConvertingDone = true;
         }
 
+        StateContainer.Lectures.Add(_lecture);
         StartPresentation();
     }
 
     private async Task HandleFileSelection(InputFileChangeEventArgs e)
     {
-        imageUrls?.Clear();
+        var lecture = new Lecture();
+        lecture.FileName = "LecturePDF.pdf";
+
+        _imageUrls?.Clear();
         IsConverting = true;
         var maxFileSize = 500 * 1024 * 1024;
 
@@ -136,7 +155,7 @@
                 try
                 {
                     await pdfFile.OpenReadStream(maxFileSize).CopyToAsync(ms);
-                    StateContainer.PdfFileBytes = ms.ToArray();
+                    lecture.PdfFileBytes = ms.ToArray();
                 }
                  catch (JSDisconnectedException)
                 {
@@ -150,9 +169,11 @@
 
             try
             {
-                var images = PDFtoImage.Conversion.ToImages(StateContainer.PdfFileBytes);
+                var images = PDFtoImage.Conversion.ToImages(lecture.PdfFileBytes);
 
-                imageUrls = new List<string>();
+                _imageUrls = new List<string>();
+                var count = 0;
+                var pages = new List<Page>();
 
                 foreach (var img in images)
                 {
@@ -163,10 +184,18 @@
                     var base64String = Convert.ToBase64String(streamImage.ToArray());
                     var dataUrl = $"data:image/png;base64, {base64String}";
 
-                    imageUrls.Add(dataUrl);
-                }
+                    // _imageUrls.Add(dataUrl);
+                    var page = new Page();
 
-                StateContainer.imageUrls = imageUrls;
+                    page.PageIndex = count;
+                    page.ImgData = dataUrl;
+                    page.Width = img.Width;
+                    page.Height = img.Height;
+
+                    lecture.Pages.Add(page);
+
+                    count++;
+                }
             }
             catch (Exception ex)
             {
@@ -178,6 +207,8 @@
                 IsConvertingDone = true;
             }
         }
+
+        StateContainer.Lectures.Add(lecture);
     }
 
     private void SelectNewFile()
@@ -190,7 +221,7 @@
     private void StartPresentation()
     {
         //StateContainer.SetComponent(typeof(Drawing));
-        NavigationManager.NavigateTo("/drawing/host");
+        NavigationManager.NavigateTo($"/drawing/host/{_lecture.Id}");
     }
 }
 

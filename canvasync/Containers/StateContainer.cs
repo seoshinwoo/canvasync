@@ -13,41 +13,39 @@ namespace canvasync.Containers;
 
 public class StateContainer
 {
-    public Dictionary<string, List<Page>> LectureDrawings { get; set; } = new();
+    public List<Lecture> Lectures { get; set; } = new();
     public bool _isHome = true;
     public Type? ComponentType { get; private set; }
-    public byte[]? PdfFileBytes { get; set; }
-    public List<string> imageUrls = new();
+    // public byte[]? PdfFileBytes { get; set; }
+    // public List<string> imageUrls = new();
 
     public byte[] CreateOverlayPdf(DrawingsDto drawingsDto)
     {
         // 1. DTO나 페이지 리스트가 null이거나 비어있는지 확인
         if (drawingsDto?.PageDtos == null || !drawingsDto.PageDtos.Any())
         {
-            Console.WriteLine($"PageDtos 가 없다!!");
             // 그릴 페이지가 없으므로 빈 배열을 즉시 반환
             return Array.Empty<byte>();
         }
 
         // 2. 페이지 크기가 유효한지 확인
-        if (drawingsDto.PageWidth <= 0 || drawingsDto.PageHeight <= 0)
-        {
-            Console.WriteLine($"페이지 크기가 유효하지 않다!!");
-            // 유효하지 않은 페이지 크기일 경우 예외를 발생시키거나 빈 배열 반환
-            throw new ArgumentException("Page dimensions must be positive values.");
-        }
+        // if (drawingsDto.PageWidth <= 0 || drawingsDto.PageHeight <= 0)
+        // {
+        //     Console.WriteLine($"페이지 크기가 유효하지 않다!!");
+        //     // 유효하지 않은 페이지 크기일 경우 예외를 발생시키거나 빈 배열 반환
+        //     throw new ArgumentException("Page dimensions must be positive values.");
+        // }
         using var ms = new MemoryStream();
         using (var document = SKDocument.CreatePdf(ms))
         {
-            var pageSize = (drawingsDto.PageWidth, drawingsDto.PageHeight);
             foreach (var pageDto in drawingsDto.PageDtos)
             {
-                using (var canvas = document.BeginPage(pageSize.Item1, pageSize.Item2))
+                using (var canvas = document.BeginPage(pageDto.Width, pageDto.Height))
                 {
                     canvas.Clear(SKColors.Transparent);
 
                     var factors = new List<Factor>();
-                    Console.WriteLine($"pageDto.FactorDtos 개수 : {pageDto.FactorDtos.Count()}");
+
                     foreach (var factorDto in pageDto.FactorDtos)
                     {
                         factors.Add(FactorDto.FactorDtoToFactor(factorDto));
@@ -55,7 +53,6 @@ public class StateContainer
 
                     foreach (var factor in factors)
                     {
-                        Console.WriteLine($"factor 그렸음 : {factor.FactorType}");
                         factor.Draw(canvas);
                     }
                 }

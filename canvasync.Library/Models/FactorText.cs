@@ -10,7 +10,7 @@ public class FactorText : Factor
     {
         get
         {
-            return _text;
+            return TextBlocks[0].Text;
         }
 
         set
@@ -38,6 +38,9 @@ public class FactorText : Factor
             }
         }
         TextBlocks[0].Font = new SKFont() { Size = 30 };
+
+        // MeasureText() 에서 Font가 Null 이여서 에러나길래 일단 추가해줌..
+        Font = new SKFont();
 
         TextBlocks[0].MeasureTextSize();
         Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
@@ -76,11 +79,11 @@ public class FactorText : Factor
         TextBlocks[0].Text = text;
         MeasureTextSize();
     }
-    public override void Draw(SKCanvas canvas)
+    public override void Draw(SKCanvas canvas, float ratio = 1f, float x = 0, float y = 0)
     {
         foreach (var textBlock in TextBlocks)
         {
-            canvas.DrawText(textBlock.Text, Box.Left, Box.Top + TextBlocks[0].Height, textBlock.Font, textBlock.Paint);
+            canvas.DrawText(textBlock.Text, Box.Left * ratio, (Box.Top + TextBlocks[0].Height) * ratio, textBlock.Font, textBlock.Paint);
         }
     }
 }

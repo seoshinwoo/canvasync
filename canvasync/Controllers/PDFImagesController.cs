@@ -17,8 +17,9 @@ public class PDFImagesController : ControllerBase
         _stateContainer = stateContainer;
     }
 
-    [HttpGet]
-    public IActionResult Get() => Ok(_stateContainer.imageUrls);
+    [HttpGet("{lectureId}")]
+    public IActionResult Get(string lectureId) 
+        => Ok(_stateContainer.Lectures.Where(lec => lec.Id == lectureId).Select(lec => PageDto.PagesToPageDtos(lec.Pages)).FirstOrDefault());
 }
 
 [ApiController]
@@ -31,21 +32,21 @@ public class PDFDownloadController : ControllerBase
         _stateContainer = stateContainer;
     }
 
-    [HttpPost("make-pdf")]
-    public async Task<IActionResult> MakePDF()
+    [HttpPost("make-pdf/{lectureId}")]
+    public async Task<IActionResult> MakePDF(string lectureId)
     {
-        Console.WriteLine($"_stateContainer.PdfFileBytes.Length : {_stateContainer.PdfFileBytes.Length}");
         var maxFileSize = 500 * 1024 * 1024;
         var form = await Request.ReadFormAsync();
+        var lecture = _stateContainer.Lectures.Where(lec => lec.Id == lectureId).FirstOrDefault(); 
 
-        var pdfFile = _stateContainer.PdfFileBytes;
+        var pdfFile = lecture.PdfFileBytes;
         if (pdfFile == null || pdfFile.Count() == 0)
         {
             return BadRequest("PDF file not found.");
         }
 
         string? drawingDatas = form["drawings"];
-        Console.WriteLine($"drawingDatas.Length : {drawingDatas.Length}");
+
         if (string.IsNullOrEmpty(drawingDatas))
         {
             return BadRequest("Drawing data not found.");
@@ -64,10 +65,10 @@ public class PDFDownloadController : ControllerBase
         byte[] overlayPdf = _stateContainer.CreateOverlayPdf(drawingsDto);
         Console.WriteLine($"overlayPdf : {overlayPdf.Length}");
 
-        if (_stateContainer.PdfFileBytes is not null)
+        if (lecture.PdfFileBytes is not null)
         {
-            Console.WriteLine($"MergePdfs에 들어갈 PdfFileBytes 의 개수 : {_stateContainer.PdfFileBytes.Length}");
-            var result = _stateContainer.MergePdfs(_stateContainer.PdfFileBytes, overlayPdf);
+            Console.WriteLine($"MergePdfs에 들어갈 PdfFileBytes 의 개수 : {lecture.PdfFileBytes.Length}");
+            var result = _stateContainer.MergePdfs(lecture.PdfFileBytes, overlayPdf);
             return File(result, "application/pdf", "downloadedFileName.pdf");
         }
         else

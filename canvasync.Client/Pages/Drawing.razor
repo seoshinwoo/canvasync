@@ -13,7 +13,6 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 
-
 <div class="page-layout">
     <!-- 상단 -->
     <div class="top" style="background-color: #b6d029;">
@@ -119,7 +118,6 @@
     private HubConnection? _hubConnection;
     private List<string> _imgUrls = new();
     private List<Page> _pages = new();
-    private List<Page> _hostPages = new();
     private Page? _selectedPage;
     private List<Factor> _factors = new();
     private record ImgSize(int width, int height);
@@ -151,8 +149,10 @@
             .WithUrl(Navigation.ToAbsoluteUri("/canvashub"))
             .Build();
 
+        Console.WriteLine($"memberType : {memberType}");
+
         _hubConnection.On<string, FactorData>("ReceiveDrawings", (user, factorData) => 
-        {
+        {   
             var factor = FactorDto.FactorDtoToFactor(factorData.FactorDto);
             if (factor.FactorType is FactorType.Pen)
             {
@@ -174,10 +174,13 @@
 
             InvokeAsync(StateHasChanged);
         });
+        
 
         try
         {
             await _hubConnection.StartAsync();
+
+            Console.WriteLine($"Hub 연결 성공!!!!!!!!!!!!!!");
         }
         catch
         {
@@ -194,12 +197,6 @@
                 page.Image = LoadImageFromBase64(page.ImgData);
                 _pages.Add(page);
             }
-
-            foreach (var page in pages)
-            {
-                Console.WriteLine($"page 이미지 크기 -> Width : {page.Width}, Height : {page.Height}");
-                // Console.WriteLine($"")
-            }
         }
         catch (Exception ex)
         {
@@ -214,6 +211,7 @@
             // await GetImageSizes(_imgUrls);
         }
         _pageLoadDone = true;
+
     }
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
@@ -245,7 +243,7 @@
         var _positionPaint = new SKPaint
         {
             Style = SKPaintStyle.Fill,
-            StrokeWidth = 5,
+            StrokeWidth = 10,
             Color = SKColors.Orange
         };
 
@@ -284,48 +282,50 @@
                 foreach (var factor in _selectedPage.Factors)
                 {
                     // factor.Draw(canvas, _ratio, _startX, _startY);
-                    Console.WriteLine($"_ratio : {_ratio}");
-                    factor.Draw(canvas, _ratio, _startX, _startY);
-                }
-            }
-
-            if (memberType == "guest" && _hostPages.Count > 0)
-            {
-                if (_hostPages[_selectedPage.PageIndex] is not null && _hostPages[_selectedPage.PageIndex].Factors is not null)
-                {
-                    foreach (var factor in _hostPages[_selectedPage.PageIndex].Factors)
+                    if (factor is FactorRect)
                     {
-                        factor.Draw(canvas, _ratio, _startX, _startY);
+                        Console.WriteLine($"Box -> Left : {factor.Box.Left}, Right : {factor.Box.Right}, Top : {factor.Box.Top}, Bottom : {factor.Box.Bottom}");
                     }
+                    factor.Draw(canvas, _ratio, _startX, _startY);
                 }
             }
 
             if (_selectedFactor is not null && _selectedFactor is not FactorPen)
             {
-                canvas.DrawRect(_selectedFactor.Box, _selectedPaint);
+                var rectBorder = new SKRect(_selectedFactor.Box.Left * _ratio + _startX, _selectedFactor.Box.Top * _ratio + _startY, _selectedFactor.Box.Right * _ratio + _startX, _selectedFactor.Box.Bottom * _ratio + _startY);
+                canvas.DrawRect(rectBorder, _selectedPaint);
 
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left, _selectedFactor.Box.Top), _positionPaint);
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.MidX, _selectedFactor.Box.Top), _positionPaint);
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right, _selectedFactor.Box.Top), _positionPaint);
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left, _selectedFactor.Box.MidY), _positionPaint);
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right, _selectedFactor.Box.MidY), _positionPaint);
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left, _selectedFactor.Box.Bottom), _positionPaint);
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.MidX, _selectedFactor.Box.Bottom), _positionPaint);
-                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right, _selectedFactor.Box.Bottom), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left * _ratio + _startX, _selectedFactor.Box.Top * _ratio + _startY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.MidX * _ratio + _startX, _selectedFactor.Box.Top * _ratio + _startY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right * _ratio + _startX, _selectedFactor.Box.Top * _ratio + _startY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left * _ratio + _startX, _selectedFactor.Box.MidY * _ratio + _startY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right * _ratio + _startX, _selectedFactor.Box.MidY * _ratio + _startY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Left * _ratio + _startX, _selectedFactor.Box.Bottom * _ratio + _startY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.MidX * _ratio + _startX, _selectedFactor.Box.Bottom * _ratio + _startY), _positionPaint);
+                canvas.DrawPoint(new SKPoint(_selectedFactor.Box.Right * _ratio + _startX, _selectedFactor.Box.Bottom * _ratio + _startY), _positionPaint);
             }
         }
     }
 
-    private void MouseDown(MouseEventArgs args)
+    private async Task MouseDown(MouseEventArgs args)
     {
         _isMousePressed = true;
         var mousePoint = new SKPoint(((float)args.OffsetX - _startX) / _ratio, ((float)args.OffsetY - _startY) / _ratio);
         // var mousePoint = new SKPoint((float)args.OffsetX, (float)args.OffsetY);
-        // Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
+        Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
         
-
+        // FactorPen은 마우스로 그리는 순간부터 Factors에 추가하고 Hub에 데이터 전송
         if (_selectedFactor is FactorPen)
         {
+            _selectedPage?.Factors.Add(_factorPen ?? new Factor());
+            var pageIndex = _pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+            @* Console.WriteLine($"새로운 factor 추가!!");
+            Console.WriteLine($"pageIndex : {pageIndex}");
+            Console.WriteLine($"factorIndex : {factorIndex}"); *@
+
+            await Send(pageIndex, factorIndex, "Add", _selectedFactor);
+
             _factorPen?.PenPath.MoveTo(mousePoint.X, mousePoint.Y);
             _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
         }
@@ -334,24 +334,30 @@
             if (_selectedPage is not null && _selectedPage.Factors is not null)
             {
                 // 주황색 점을 조금이라도 factor 바깥 방향에서 클릭하려고 하면 선택이 풀려버리는 것을 막는 코드 필요..
-                Console.WriteLine($"_selectedPage.Factors[0].Box -> Left : {_selectedPage.Factors[0].Box.Left}, Right : {_selectedPage.Factors[0].Box.Right}, Top : {_selectedPage.Factors[0].Box.Top}, Bottom : {_selectedPage.Factors[0].Box.Bottom}");
-                Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
-                var factor = _selectedPage.Factors.Where(f => f.Box.Contains(mousePoint.X, mousePoint.Y)).LastOrDefault();
-                if (factor is not null)
-                {
-                    if (factor != _selectedFactor)
-                    {
-                        _selectedFactor = factor;
-                    }
+                // Console.WriteLine($"_selectedPage.Factors[0].Box -> Left : {_selectedPage.Factors[0].Box.Left}, Right : {_selectedPage.Factors[0].Box.Right}, Top : {_selectedPage.Factors[0].Box.Top}, Bottom : {_selectedPage.Factors[0].Box.Bottom}");
+                // Console.WriteLine($"mousePoint.X : {mousePoint.X}, mousePoint.Y : {mousePoint.Y}");
+                var isOnPoints = false;
 
-                    bool isOnPoints = factor.PositionPoints.Any(p => SKPoint.Distance(p.Value, mousePoint) <= 20);
-                    if (isOnPoints && _selectedFactor is not null)
+                if (_selectedFactor is not null)
+                {
+                    isOnPoints = _selectedFactor.PositionPoints.Any(p => SKPoint.Distance(p.Value, mousePoint) <= 100);
+                    if (isOnPoints)
                     {
                         _isPointDragging = true;
-                        _selectedFactorPoint = factor.PositionPoints.Where(p => SKPoint.Distance(p.Value, mousePoint) <= 20).Select(p => p.Key).FirstOrDefault();
+                        _selectedFactorPoint = _selectedFactor.PositionPoints.Where(p => SKPoint.Distance(p.Value, mousePoint) <= 100).Select(p => p.Key).FirstOrDefault();
                     }
-                    else
+                }
+
+                if (!isOnPoints)
+                {
+                    var factor = _selectedPage.Factors.Where(f => f.Box.Contains(mousePoint.X, mousePoint.Y)).LastOrDefault();
+                    if (factor is not null)
                     {
+                        if (factor != _selectedFactor)
+                        {
+                            _selectedFactor = factor;
+                        }
+
                         _selectedFactor = factor;
 
                         _diffLeft = mousePoint.X- _selectedFactor.Box.Left;
@@ -359,10 +365,10 @@
                         _diffRight = _selectedFactor.Box.Right - mousePoint.X;
                         _diffBottom = _selectedFactor.Box.Bottom - mousePoint.Y;
                     }
-                }
-                else
-                {
-                    _selectedFactor = null;
+                    else
+                    {
+                        _selectedFactor = null;
+                    }
                 }
             }
         }
@@ -419,7 +425,8 @@
                 // Console.WriteLine($"mousePoint -> X : {mousePoint.X}, Y : {mousePoint.Y}");
                 _factorPen?.PenPath.QuadTo(_penPoint, new SKPoint(mousePoint.X, mousePoint.Y));
                 _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
-                Console.WriteLine($"_factorPen에 들어있는거!! : {_factorPen.PenPath.Points.Last()}");
+                // Console.WriteLine($"_factorPen에 들어있는거!! : {_factorPen.PenPath.Points.Last()}");
+                // Console.WriteLine($"열심히 그리고 있는 StrokeWidth : {_selectedFactor.Paint.StrokeWidth}");
             }
 
             if (memberType == "host")
@@ -451,7 +458,7 @@
             _penPoint = new();
             if (_factorPen is not null)
             {
-                _selectedPage?.Factors?.Add(_factorPen);
+                // _selectedPage?.Factors?.Add(_factorPen);
                 // Console.WriteLine($"_factorPen 개수 : {_factorPen.PenPath.PointCount}");
                 // Console.WriteLine($"처음 : ({_factorPen.PenPath.Points.First().X}, {_factorPen.PenPath.Points.First().Y}), 마지막 : ({_factorPen.PenPath.Points.Last().X}, {_factorPen.PenPath.Points.Last().Y})");
                 
@@ -533,23 +540,21 @@
             case FactorType.Rect:
                 var factorRect = new FactorRect();
                 factorRect.Box = rect;
-                factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
+                factorRect.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5f / _ratio, IsAntialias = true };
                 _selectedPage.Factors.Add(factorRect);
                 _selectedFactor = factorRect;
-
-                Console.WriteLine($"_selectedFactor 의 크기 -> Left : {_selectedFactor.Box.Left}, Top : {_selectedFactor.Box.Top}, Width : {_selectedFactor.Box.Width}, Height : {_selectedFactor.Box.Height}");
                 break;
             case FactorType.Circle:
                 var factorCircle = new FactorCircle();
                 factorCircle.Box = rect;
-                factorCircle.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
+                factorCircle.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5f / _ratio, IsAntialias = true };
                 _selectedPage.Factors.Add(factorCircle);
                 _selectedFactor = factorCircle;
                 break;
             case FactorType.Line:
                 var factorLine = new FactorLine();
                 factorLine.Box = rect;
-                factorLine.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
+                factorLine.Paint = new SKPaint{ Color = SKColor.Parse(_selectedColor), Style = SKPaintStyle.Stroke, StrokeWidth = 5f / _ratio, IsAntialias = true };
                 _selectedPage.Factors.Add(factorLine);
                 _selectedFactor = factorLine;
                 break;
@@ -560,7 +565,9 @@
                 };
                 var factorText = new FactorText(_selectedColor);
                 factorText.Paint = new SKPaint(){ Color = SKColor.Parse(_selectedColor) };
-                factorText.Box = new SKRect(rect.Left, rect.Right, rect.Left + (factorText.Box.Width) / _ratio, (_startY + factorText.Box.Height) / _ratio);
+                Console.WriteLine($"rect -> Left : {rect.Left}, Top : {rect.Top}, Width : {rect.Width}, Height : {rect.Height}");
+                factorText.Box = new SKRect(rect.Left, rect.Top, rect.Left + factorText.TextBlocks[0].Width, rect.Top + factorText.TextBlocks[0].Height);
+                Console.WriteLine($"factorText.TextBlocks[0] -> Left : {factorText.TextBlocks[0].Left + factorText.Box.Left}, Top : {factorText.TextBlocks[0].Top + factorText.Box.Top}, Width : {factorText.TextBlocks[0].Width}, Height : {factorText.TextBlocks[0].Height}");
                 _selectedPage.Factors.Add(factorText);
                 _selectedFactor = factorText;
                 break;
@@ -569,11 +576,12 @@
                 {
                     Color = SKColor.Parse(_selectedColor),
                     Style = SKPaintStyle.Stroke,
-                    StrokeWidth = 5,
+                    StrokeWidth = 5f / _ratio,
                     IsAntialias = true
                 };
                 _factorPen = new FactorPen(penPaint);
-                _selectedPage.Factors.Add(_factorPen);
+                Console.WriteLine($"_factorPen 의 StrokeWidth : {_factorPen.Paint.StrokeWidth}");
+                // _selectedPage.Factors.Add(_factorPen);
                 _selectedFactor = _factorPen;
                 break;
             default:
@@ -585,10 +593,13 @@
 
         if (memberType == "host")
         {
-            var pageIndex = _pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+            if (_selectedFactor is not FactorPen)
+            {
+                var pageIndex = _pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
-            await Send(pageIndex, factorIndex, "Add", _selectedFactor);
+                await Send(pageIndex, factorIndex, "Add", _selectedFactor);
+            }
         }
     }
 
@@ -669,7 +680,7 @@
             using var content = new MultipartFormDataContent();
             var drawingsDtoJson = JsonSerializer.Serialize(drawingsDto);
             content.Add(new StringContent(drawingsDtoJson), "drawings");
-            var response = await HttpClient.PostAsync("http://localhost:5175/api/pdfdownload/make-pdf", content);
+            var response = await HttpClient.PostAsync($"http://localhost:5175/api/pdfdownload/make-pdf/{lectureId}", content);
 
             if (response.IsSuccessStatusCode)
             {

@@ -38,8 +38,14 @@ public class FactorPen : Factor
             var path = new SKPath();
 
             PenPath.Transform(transformMatrix, path);
-            
-            canvas.DrawPath(path, Paint);
+
+            // Console.WriteLine($"그리기 전 StrokeWidth : {Paint.StrokeWidth}");
+            // Console.WriteLine($"ratio : {ratio}");
+            // Paint.StrokeWidth *= ratio;
+
+            var drawPaint = Paint.Clone();
+            drawPaint.StrokeWidth = Paint.StrokeWidth * ratio;
+            canvas.DrawPath(path, drawPaint);
         }
     }
 }

@@ -1,9 +1,7 @@
 ﻿@rendermode InteractiveServer
 @page "/"
-@inject Containers.StateContainer StateContainer
-@implements IDisposable
 
-@if(StateContainer._isHome)
+@if(currentComponent is null)
 {
     <div class="background-container">
         <div class="top-box">
@@ -43,42 +41,20 @@ else
 @code
 {
     private Type? currentComponent;
-    protected override void OnInitialized()
-    {
-        StateContainer.OnChange += ChangeComponent;
-    }
-
-    public void Dispose()
-    {
-        StateContainer.OnChange -= ChangeComponent;
-    }
     private void EnterPage(string option)
     {
         switch (option)
         {
             case "host":
-                StateContainer.SetComponent(typeof(Host));
+                currentComponent = typeof(Host);
                 break;
             case "guest":
-                StateContainer.SetComponent(typeof(Guest));
+                currentComponent = typeof(Guest);
                 break;
             default:
                 //
                 break;
         }
-    }
-
-    private async void ChangeComponent()
-    {
-        await InvokeAsync(() =>
-        {
-            currentComponent = StateContainer.ComponentType;
-        });
-
-        await InvokeAsync(() =>
-        {
-            StateHasChanged();
-        });
     }
 
     private string hostBtnStyle = "background-color:#FFB900";

@@ -29,6 +29,7 @@ public class FactorDto
     public static FactorDto FactorToFactorDto(Factor factor)
     {
         var factorDto = new FactorDto();
+        Console.WriteLine($"factor.FactorType : {factor.FactorType}");
         factorDto.FactorType = factor.FactorType;
 
         // Box 직렬화..
@@ -143,6 +144,30 @@ public class FactorDto
         if (SKColor.TryParse(factorDto.PaintColor, out SKColor color))
         {
             factor.Paint.Color = color;
+        }
+
+        // FactorRect 역직렬화..
+        if (factorDto.FactorType is FactorType.Rect)
+        {
+            var factorRect = new FactorRect(factor);
+
+            return factorRect;
+        }
+
+        // FactorCircle 역직렬화..
+        if (factorDto.FactorType is FactorType.Circle)
+        {
+            var factorCircle = new FactorCircle(factor);
+
+            return factorCircle;
+        }
+
+        // FactorLine 역직렬화..
+        if (factorDto.FactorType is FactorType.Line)
+        {
+            var FactorLine = new FactorLine(factor);
+
+            return FactorLine;
         }
 
         // FactorText 역직렬화..

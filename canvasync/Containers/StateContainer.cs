@@ -14,10 +14,6 @@ namespace canvasync.Containers;
 public class StateContainer
 {
     public List<Lecture> Lectures { get; set; } = new();
-    public bool _isHome = true;
-    public Type? ComponentType { get; private set; }
-    // public byte[]? PdfFileBytes { get; set; }
-    // public List<string> imageUrls = new();
 
     public byte[] CreateOverlayPdf(DrawingsDto drawingsDto)
     {
@@ -53,6 +49,7 @@ public class StateContainer
 
                     foreach (var factor in factors)
                     {
+                        Console.WriteLine($"StrokeWidth : {factor.Paint.StrokeWidth}");
                         factor.Draw(canvas);
                     }
                 }
@@ -63,10 +60,10 @@ public class StateContainer
 
     public byte[] MergePdfs(byte[] basePdfBytes, byte[] overlayPdfBytes)
     {
-        using (MemoryStream overlayStream = new MemoryStream(overlayPdfBytes))
-        {
-            return overlayStream.ToArray();    
-        }
+        // using (MemoryStream overlayStream = new MemoryStream(overlayPdfBytes))
+        // {
+        //     return overlayStream.ToArray();    
+        // }
 
         Console.WriteLine($"overlayPdfBytes 길이 : {overlayPdfBytes.Length}");
         string tempOverlayFile = Path.GetTempFileName();
@@ -130,12 +127,5 @@ public class StateContainer
     }
 
     public event Action? OnChange;
-
-    public void SetComponent(Type? componentType)
-    {
-        _isHome = componentType == typeof(Home) ? true : false;
-        ComponentType = componentType;
-        NotifyStateChanged();
-    }
     private void NotifyStateChanged() => OnChange?.Invoke();
 }

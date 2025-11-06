@@ -77,16 +77,17 @@ public class FactorText : Factor
 
     public void TextChanged(string text)
     {
-        // Text = text;
         TextBlocks[0].Text = text;
         TextBlocks[0].MeasureTextSize();
+
+        Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Bottom);
     }
     public override void Draw(SKCanvas canvas, float ratio = 1f, float x = 0, float y = 0)
     {
         foreach (var textBlock in TextBlocks)
         {
-            Console.WriteLine($"Box -> Left : {Box.Left}, Top : {Box.Top}, Width : {Box.Width}, Height : {Box.Height}");
-            Console.WriteLine($"텍스트 -> Left : {textBlock.Left}, Top : {textBlock.Top}, Width : {textBlock.Width}, Height : {textBlock.Height}");
+            // Console.WriteLine($"Box -> Left : {Box.Left}, Top : {Box.Top}, Width : {Box.Width}, Height : {Box.Height}");
+            // Console.WriteLine($"텍스트 -> Left : {textBlock.Left}, Top : {textBlock.Top}, Width : {textBlock.Width}, Height : {textBlock.Height}");
             var drawFont = new SKFont();
             drawFont.Size = textBlock.Font.Size * ratio;
 
@@ -94,6 +95,7 @@ public class FactorText : Factor
             drawPaint.StrokeWidth = textBlock.Paint.StrokeWidth * ratio;
 
             canvas.DrawText(textBlock.Text, (Box.Left + textBlock.Left) * ratio + x, (Box.Top + textBlock.Height) * ratio + y, drawFont, drawPaint);
+            // Console.WriteLine($"텍스트 그림!! : {textBlock.Text}");
         }
     }
 }

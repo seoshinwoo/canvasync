@@ -84,11 +84,14 @@
                     
                 }
 
-                <div>
-                    <span style="font-weight: 500; font-size: 25px;">🎨 Color</span>
-                        <input type="color" @bind="_selectedColor" @oninput="ColorChanged"
-                            style="width: 40px; height: 40px; border: none; border-radius: 6px; cursor: pointer;" />
-                </div>
+                @if (_selectedFactor is not null)
+                {
+                    <div>
+                        <span style="font-weight: 500; font-size: 25px;">🎨 Color</span>
+                            <input type="color" @bind="_selectedColor" @oninput="ColorChanged"
+                                style="width: 40px; height: 40px; border: none; border-radius: 6px; cursor: pointer;" />
+                    </div>
+                }
                 <hr>
                 @* <div class="fixed-footer">
                     <button class="btn btn-secondary" style="flex: 1;">취소</button>
@@ -507,6 +510,7 @@
     private void ColorChanged(ChangeEventArgs e)
     {
         _selectedColor = e.Value?.ToString() ?? "#000000";
+        _selectedFactor.Paint.Color = SKColor.Parse(_selectedColor);
     }
 
     private async Task AddFactor(FactorType type)

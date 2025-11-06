@@ -7,8 +7,8 @@ namespace canvasync.Library.Models;
 public class Factor
 {
     private SKRect _box;
-    private SKFont _font;
-    private SKPaint _paint;
+    private SKFont _font = new();
+    private SKPaint _paint = new();
     public FactorType FactorType = FactorType.None;
     public SKRect Box
     {

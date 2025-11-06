@@ -24,13 +24,8 @@ public class StateContainer
             return Array.Empty<byte>();
         }
 
-        // 2. 페이지 크기가 유효한지 확인
-        // if (drawingsDto.PageWidth <= 0 || drawingsDto.PageHeight <= 0)
-        // {
-        //     Console.WriteLine($"페이지 크기가 유효하지 않다!!");
-        //     // 유효하지 않은 페이지 크기일 경우 예외를 발생시키거나 빈 배열 반환
-        //     throw new ArgumentException("Page dimensions must be positive values.");
-        // }
+        Console.WriteLine($"여기서부터!!!!");
+        var count = 0;
         using var ms = new MemoryStream();
         using (var document = SKDocument.CreatePdf(ms))
         {
@@ -44,17 +39,21 @@ public class StateContainer
 
                     foreach (var factorDto in pageDto.FactorDtos)
                     {
+                        Console.WriteLine($"타입 : {FactorDto.FactorDtoToFactor(factorDto).FactorType}");
                         factors.Add(FactorDto.FactorDtoToFactor(factorDto));
                     }
 
                     foreach (var factor in factors)
                     {
-                        Console.WriteLine($"StrokeWidth : {factor.Paint.StrokeWidth}");
-                        factor.Draw(canvas);
+                        var factorText = (FactorText)factor;
+                        Console.WriteLine($"factorText : {factorText.Text}");
+                        factorText.Draw(canvas);
+                        // factor.Draw(canvas);
                     }
                 }
             }
         }
+
         return ms.ToArray();
     }
 
@@ -65,7 +64,7 @@ public class StateContainer
         //     return overlayStream.ToArray();    
         // }
 
-        Console.WriteLine($"overlayPdfBytes 길이 : {overlayPdfBytes.Length}");
+        // Console.WriteLine($"overlayPdfBytes 길이 : {overlayPdfBytes.Length}");
         string tempOverlayFile = Path.GetTempFileName();
         try
         {

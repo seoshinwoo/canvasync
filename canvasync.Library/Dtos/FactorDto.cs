@@ -174,6 +174,7 @@ public class FactorDto
         if (factorDto.FactorType is FactorType.Text)
         {
             var factorText = new FactorText(factor);
+            factorText.TextBlocks.Clear();
 
             foreach (var textBlockDto in factorDto.TextBlockDtos ?? new List<TextBlockDto>())
             {

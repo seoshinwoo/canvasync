@@ -8,6 +8,7 @@ public class FactorPen : Factor
     public SKPath PenPath { get; set; }
     public FactorPen(SKPaint paint)
     {
+        FactorType = FactorType.Pen;
         PenPath = new SKPath();
         Paint = paint;
     }
@@ -27,7 +28,6 @@ public class FactorPen : Factor
     {
         if (PenPath is not null)
         {
-            // Console.WriteLine($"처음 : ({PenPath.Points.First().X}, {PenPath.Points.First().Y}), 마지막 : ({PenPath.Points.Last().X}, {PenPath.Points.Last().Y})");
             SKMatrix transformMatrix = SKMatrix.CreateIdentity();
 
             transformMatrix.ScaleX = ratio;
@@ -38,10 +38,6 @@ public class FactorPen : Factor
             var path = new SKPath();
 
             PenPath.Transform(transformMatrix, path);
-
-            // Console.WriteLine($"그리기 전 StrokeWidth : {Paint.StrokeWidth}");
-            // Console.WriteLine($"ratio : {ratio}");
-            // Paint.StrokeWidth *= ratio;
 
             var drawPaint = Paint.Clone();
             drawPaint.StrokeWidth = Paint.StrokeWidth * ratio;

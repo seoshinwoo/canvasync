@@ -18,7 +18,22 @@ public class PDFImagesController : ControllerBase
     }
 
     [HttpGet("{lectureId}")]
-    public IActionResult Get(string lectureId) 
+    public IActionResult Get(string lectureId)
+        => Ok(_stateContainer.Lectures.Where(lec => lec.Id == lectureId).Select(lec => PageDto.PagesToPageDtos(lec.Pages)).FirstOrDefault());
+}
+
+[ApiController]
+[Route("api/[controller]")]
+public class PagesController : ControllerBase
+{
+    private readonly StateContainer _stateContainer;
+    public PagesController(StateContainer stateContainer)
+    {
+        _stateContainer = stateContainer;
+    }
+
+    [HttpGet("{lectureId}")]
+    public IActionResult Get(string lectureId)
         => Ok(_stateContainer.Lectures.Where(lec => lec.Id == lectureId).Select(lec => PageDto.PagesToPageDtos(lec.Pages)).FirstOrDefault());
 }
 
@@ -58,16 +73,11 @@ public class PDFDownloadController : ControllerBase
             return BadRequest("Invalid drawing data");
         }
 
-        // PDF 처리 서비스 호출
-        // byte[] resultPdf = _stateContainer.Create(factorDatas);
-
         // 오버레이할 PDF 생성
         byte[] overlayPdf = _stateContainer.CreateOverlayPdf(drawingsDto);
-        Console.WriteLine($"overlayPdf : {overlayPdf.Length}");
 
         if (lecture.PdfFileBytes is not null)
         {
-            Console.WriteLine($"MergePdfs에 들어갈 PdfFileBytes 의 개수 : {lecture.PdfFileBytes.Length}");
             var result = _stateContainer.MergePdfs(lecture.PdfFileBytes, overlayPdf);
             return File(result, "application/pdf", "downloadedFileName.pdf");
         }
@@ -75,30 +85,5 @@ public class PDFDownloadController : ControllerBase
         {
             return BadRequest("Invalid drawing data");
         }
-
-
-        // // 기존 PDF와 오브레이할 PDF 합치기
-        // using (var memoryStream = new MemoryStream())
-        // {
-        //     try
-        //     {
-        //         await _stateContainer.PdfFile.OpenReadStream(maxFileSize).CopyToAsync(memoryStream);
-        //     }
-        //     catch (JSDisconnectedException)
-        //     {
-        //         Console.WriteLine("File upload was canceld by the user.");
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Console.WriteLine($"{ex}, An unexpected error occured during file upload");
-        //     }
-
-        //     byte[] basePdfBytes = memoryStream.ToArray();
-
-        //     var result = _stateContainer.MergePdfs(basePdfBytes, overlayPdf);
-
-        //     return File(result, "application/pdf", "downloadedFileName.pdf");
-        //     }
-        // }
     }
 }

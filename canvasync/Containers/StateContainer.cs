@@ -24,8 +24,6 @@ public class StateContainer
             return Array.Empty<byte>();
         }
 
-        Console.WriteLine($"여기서부터!!!!");
-        var count = 0;
         using var ms = new MemoryStream();
         using (var document = SKDocument.CreatePdf(ms))
         {
@@ -39,16 +37,12 @@ public class StateContainer
 
                     foreach (var factorDto in pageDto.FactorDtos)
                     {
-                        Console.WriteLine($"타입 : {FactorDto.FactorDtoToFactor(factorDto).FactorType}");
                         factors.Add(FactorDto.FactorDtoToFactor(factorDto));
                     }
 
                     foreach (var factor in factors)
                     {
-                        var factorText = (FactorText)factor;
-                        Console.WriteLine($"factorText : {factorText.Text}");
-                        factorText.Draw(canvas);
-                        // factor.Draw(canvas);
+                        factor.Draw(canvas);
                     }
                 }
             }
@@ -96,13 +90,10 @@ public class StateContainer
                             // 6. XPdfForm에서 특정 페이지를 지정하여 그립니다.
                             // 페이지 인덱스는 1부터 시작합니다. (overlayForm.PageNumber)
                             overlayForm.PageNumber = i + 1;
-                            Console.WriteLine($"overlayForm : {overlayForm.Page.Contents.Count()}");
 
                             // 배경 페이지 전체에 꽉 차게 오버레이 페이지를 그립니다.
                             gfx.DrawImage(overlayForm, new XRect(0, 0, basePage.Width.Point, basePage.Height.Point));
                             var pen = new XPen(XColor.FromKnownColor(XKnownColor.Aqua));
-                            // gfx.DrawRectangle(pen, new XRect(0, 0, 100, 100));
-                            Console.WriteLine($"gfx DrawImage!!!!! basePage.Width.Point : {basePage.Width.Point}, basePage.Height.Point : {basePage.Height.Point}");
                         }
                     }
 

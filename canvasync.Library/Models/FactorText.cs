@@ -86,16 +86,13 @@ public class FactorText : Factor
     {
         foreach (var textBlock in TextBlocks)
         {
-            // Console.WriteLine($"Box -> Left : {Box.Left}, Top : {Box.Top}, Width : {Box.Width}, Height : {Box.Height}");
-            // Console.WriteLine($"텍스트 -> Left : {textBlock.Left}, Top : {textBlock.Top}, Width : {textBlock.Width}, Height : {textBlock.Height}");
             var drawFont = new SKFont();
             drawFont.Size = textBlock.Font.Size * ratio;
 
-            var drawPaint = Paint.Clone();
-            drawPaint.StrokeWidth = textBlock.Paint.StrokeWidth * ratio;
+            // var drawPaint = textBlock.Paint.Clone();
+            // drawPaint.StrokeWidth = textBlock.Paint.StrokeWidth * ratio;
 
-            canvas.DrawText(textBlock.Text, (Box.Left + textBlock.Left) * ratio + x, (Box.Top + textBlock.Height) * ratio + y, drawFont, drawPaint);
-            // Console.WriteLine($"텍스트 그림!! : {textBlock.Text}");
+            canvas.DrawText(textBlock.Text, (Box.Left + textBlock.Left) * ratio + x, (Box.Top + textBlock.Height) * ratio + y, drawFont, textBlock.Paint);
         }
     }
 }

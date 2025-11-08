@@ -29,7 +29,6 @@ public class FactorDto
     public static FactorDto FactorToFactorDto(Factor factor)
     {
         var factorDto = new FactorDto();
-        Console.WriteLine($"factor.FactorType : {factor.FactorType}");
         factorDto.FactorType = factor.FactorType;
 
         // Box 직렬화..
@@ -87,37 +86,6 @@ public class FactorDto
             var penPathDto = new PenPathDto();
             penPathDto.PenPathData = factorPen.PenPath.ToSvgPathData();
             factorDto.PenPathDto = penPathDto;
-
-            // FactorPen factorPen = (FactorPen)factor;
-            // var penPathsDto = new PenPathsDto();
-            // using var iterator = factorPen.PenPath.CreateRawIterator();
-
-            // var points = new SKPoint[4];
-            // SKPathVerb verb;
-
-            // while ((verb = iterator.Next(points)) != SKPathVerb.Done)
-            // {
-            //     var penPathDto = new PenPathDto
-            //     {
-            //         Verb = verb.ToString() // "Move", "Quad" 등의 문자열로 저장
-            //     };
-
-            //     int pointCount = verb switch
-            //     {
-            //         SKPathVerb.Move => 1,
-            //         SKPathVerb.Line => 2,
-            //         SKPathVerb.Quad => 3,
-            //         SKPathVerb.Conic => 3,
-            //         SKPathVerb.Cubic => 4,
-            //         SKPathVerb.Close => 0,
-            //         _ => 0
-            //     };
-
-            //     penPathDto.Points.AddRange(points.Take(pointCount).Select(p => (p.X, p.Y)));
-            //     penPathsDto.PenPaths.Add(penPathDto);
-            // }
-
-            // factorDto.PenPathDtos = penPathsDto.PenPaths;
         }
 
         return factorDto;
@@ -126,6 +94,7 @@ public class FactorDto
     public static Factor FactorDtoToFactor(FactorDto factorDto)
     {
         var factor = new Factor();
+        factor.FactorType = factorDto.FactorType;
 
         // Box 역직렬화..
         if (factorDto.FactorType is not FactorType.Pen)
@@ -210,49 +179,8 @@ public class FactorDto
         if (factorDto.FactorType is FactorType.Pen)
         {
             var factorPen = new FactorPen(factor);
-            // Console.WriteLine($"factorDto.PenPathDto.PenPathData : {factorDto.PenPathDto.PenPathData.Length}");
             factorPen.PenPath = SKPath.ParseSvgPathData(factorDto.PenPathDto.PenPathData);
 
-
-
-            // var path = new SKPath();
-
-            // Console.WriteLine($"factorDto.PenPathDtos : {factorDto.PenPathDtos.Count()}");
-            // foreach (var penPath in factorDto.PenPathDtos ?? new List<PenPathDto>())
-            // {
-            //     switch (penPath.Verb)
-            //     {
-            //         case "Move":
-            //             if (penPath.Points.Any())
-            //             {
-            //                 path.MoveTo(penPath.Points[0].X, penPath.Points[0].Y);
-            //             }
-            //             break;
-            //         case "Line":
-            //             if (penPath.Points.Count >= 2)
-            //             {
-            //                 path.LineTo(penPath.Points[1].X, penPath.Points[1].Y);
-            //             }
-            //             break;
-            //         case "Quad":
-            //             if (penPath.Points.Count >= 3)
-            //             {
-            //                 path.QuadTo(penPath.Points[1].X, penPath.Points[1].Y, penPath.Points[2].X, penPath.Points[2].Y);
-            //             }
-            //             break;
-            //         case "Cubic":
-            //             if (penPath.Points.Count >= 4)
-            //             {
-            //                 path.CubicTo(penPath.Points[1].X, penPath.Points[1].Y, penPath.Points[2].X, penPath.Points[2].Y, penPath.Points[3].X, penPath.Points[3].Y);
-            //             }
-            //             break;
-            //         case "Close":
-            //             path.Close();
-            //             break;
-            //     }
-            // }
-
-            // factorPen.PenPath = path;
             return factorPen; 
         }
 
@@ -287,8 +215,4 @@ public class PenPathsDto
 public class PenPathDto
 {
     public string PenPathData { get; set; } = string.Empty;
-    // public string? PenPathPaintColor { get; set; }
-    // public SKPaintStyle PenPathPaintStyle { get; set; }
-    // public float PenPathPaintStrokeWidth { get; set; }
-    // public bool PenPathPaintIsAntialias { get; set; }
 }

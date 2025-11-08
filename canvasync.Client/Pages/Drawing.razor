@@ -16,7 +16,14 @@
 <div class="page-layout">
     <!-- 상단 -->
     <div class="top" style="background-color: #b6d029;">
-        <h3></h3>
+        <h3 @onclick="BackToHome">CanvaSync</h3>
+        <div style="display: flex; flex-direction: row; width: 100%; gap: 10px">
+            <div class="factor-rect-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Rect) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Rect)'></div>   
+            <div class="factor-circle-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Circle) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Circle)'></div>   
+            <div class="factor-line-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Line) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Line)'></div>   
+            <div class="factor-text-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Text) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Text)'></div>   
+            <div class="factor-pen-icon hover-btn" style="background-color: @((_isPen) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Pen)'></div>   
+        </div>
         <div class="button-group">
             <button @onclick="DeleteAll">Save</button>
             <button @onclick="Print">Print</button>
@@ -48,13 +55,7 @@
                 />
             </section>
             <section class="right">
-                <div style="display: flex; flex-direction: row; width: 100%; gap: 10px">
-                    <div class="factor-rect-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Rect) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Rect)'></div>   
-                    <div class="factor-circle-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Circle) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Circle)'></div>   
-                    <div class="factor-line-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Line) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Line)'></div>   
-                    <div class="factor-text-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Text) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Text)'></div>   
-                    <div class="factor-pen-icon hover-btn" style="background-color: @((_isPen) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Pen)'></div>   
-                </div>
+                
 
                 <hr>
                 @if (_selectedFactor is FactorRect)
@@ -195,9 +196,7 @@
         try
         {
             var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>($"http://localhost:5175/api/pdfimages/{lectureId}") ?? new List<PageDto>();
-            Console.WriteLine($"pageDtos 개수 : {pageDtos.Count()}");
             var hostPages = PageDto.PageDtosToPages(pageDtos);
-            Console.WriteLine($"hostPages 개수 : {hostPages.Count()}");
             foreach (var hostPage in hostPages)
             {
                 var page = new Page();
@@ -210,13 +209,8 @@
                 page.Width = hostPage.Width;
                 page.Height = hostPage.Height;
 
-                // page.Image = LoadImageFromBase64(page.ImgData);
                 _pages.Add(page);
             }
-
-            @* var hostPageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>($"http://localhost:5175/api/pages/{lectureId}") ?? new List<PageDto>();
-            _hostPages = PageDto.PageDtosToPages(hostPageDtos);
-            Console.WriteLine($"처음에 로드한 factor 개수 : {_hostPages[1].Factors.Count()}"); *@
         }
         catch (Exception ex)
         {
@@ -697,6 +691,11 @@
         }
     }
 
+    private void BackToHome()
+    {
+        // 
+    }
+
     private SKImage LoadImageFromBase64(string base64)
     {
         // 1. data URI prefix 제거
@@ -756,6 +755,11 @@
     align-items: center;
     background-color: #b6d029;
     padding: 8px;
+}
+
+.top-center {
+    display: flex;
+    gap: 10px;
 }
 
 .button-group {

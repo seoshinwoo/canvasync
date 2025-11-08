@@ -26,7 +26,7 @@
 }
 else
 {
-    <CanvasLayout>
+    <CanvasLayout OnNotify="BackToHome">
         @if(currentComponent is not null)
         {
             <DynamicComponent Type="currentComponent" />
@@ -56,6 +56,14 @@ else
                 break;
         }
     }
+
+    private void BackToHome()
+    {
+        currentComponent = null;
+    }
+
+
+    // 버튼 관련
 
     private string hostBtnStyle = "background-color:#FFB900";
     private string guestBtnStyle = "background-color: #1E84D9";

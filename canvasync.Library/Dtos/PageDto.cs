@@ -24,7 +24,7 @@ public class PageDto
             pageDto.Width = page.Width;
             pageDto.Height = page.Height;
 
-            foreach (var factor in page.Factors)
+            foreach (var factor in page.HostFactors.Concat(page.Factors).ToList())
             {
                 var factorDto = FactorDto.FactorToFactorDto(factor);
                 pageDto.FactorDtos.Add(factorDto);

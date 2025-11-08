@@ -167,13 +167,13 @@
             switch (factorData.FactorAction)
             {
                 case "Add":
-                    _pages[factorData.PageIndex].Factors.Add(factor);
+                    _pages[factorData.PageIndex].HostFactors.Add(factor);
                     break;
                 case "Delete":
-                    _pages[factorData.PageIndex].Factors.RemoveAt(factorData.FactorIndex);
+                    _pages[factorData.PageIndex].HostFactors.RemoveAt(factorData.FactorIndex);
                     break;
                 case "Update": 
-                    _pages[factorData.PageIndex].Factors[factorData.FactorIndex] = factor;
+                    _pages[factorData.PageIndex].HostFactors[factorData.FactorIndex] = factor;
                     break;
             }
 
@@ -195,12 +195,22 @@
         try
         {
             var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>($"http://localhost:5175/api/pdfimages/{lectureId}") ?? new List<PageDto>();
-
-            var pages = PageDto.PageDtosToPages(pageDtos);
-
-            foreach (var page in pages)
+            Console.WriteLine($"pageDtos 개수 : {pageDtos.Count()}");
+            var hostPages = PageDto.PageDtosToPages(pageDtos);
+            Console.WriteLine($"hostPages 개수 : {hostPages.Count()}");
+            foreach (var hostPage in hostPages)
             {
+                var page = new Page();
+
+                page.PageIndex = hostPage.PageIndex;
+                page.ImgData = hostPage.ImgData;
                 page.Image = LoadImageFromBase64(page.ImgData);
+                page.HostFactors = hostPage.Factors;
+                Console.WriteLine($"HostFactors 개수 : {page.HostFactors.Count()}");
+                page.Width = hostPage.Width;
+                page.Height = hostPage.Height;
+
+                // page.Image = LoadImageFromBase64(page.ImgData);
                 _pages.Add(page);
             }
 
@@ -283,8 +293,13 @@
             canvas.DrawRect(rect, borderPaint);
             canvas.DrawImage(_selectedPage.Image, rect);
 
-            if (_selectedPage.Factors is not null)
+            if (_selectedPage.Factors is not null || _selectedPage.HostFactors is not null)
             {
+                foreach (var factor in _selectedPage.HostFactors)
+                {
+                    factor.Draw(canvas, _ratio, _startX, _startY);
+                }
+
                 foreach (var factor in _selectedPage.Factors)
                 {
                     factor.Draw(canvas, _ratio, _startX, _startY);

@@ -4,15 +4,10 @@
 @inject Containers.StateContainer StateContainer
 @inject NavigationManager NavigationManager
 
-
-<div style="color: #5C6916; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-    주소 입력 : <input @bind="_lectureId"/>
-    @if (!_isPresentationOpened)
-    {
-        <p style="color: red">아직 강의가 오픈되지 않았습니다.</p>
-    }
-
-    <button @onclick = "Enter">입장</button>
+<div class="center-container">
+    <label for="addressInput">Code :</label>
+    <input id="addressInput" class="pretty-input" @bind="_lectureId"/>
+    <button @onclick="Enter" class="pretty-button">Enter</button>
 </div>
 
 @code
@@ -32,3 +27,41 @@
         }
     }
 }
+
+<style>
+    .center-container {
+        color: #b6d029;
+        background-color: #21241B;
+        min-height: 100vh;       /* 1. 화면 전체 높이를 기준으로 */
+        display: flex;
+        flex-direction: column;  /* 아이템을 세로로 쌓음 */
+        justify-content: center; /* 세로 방향 중앙 정렬 */
+        align-items: center;     /* 가로 방향 중앙 정렬 */
+        gap: 1rem;               /* 2. 아이템 사이의 간격 (약 16px) */
+    }
+
+    .pretty-input {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        width: 250px; /* 적절한 너비 */
+        font-size: 1rem;
+    }
+
+    .pretty-button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background-color: #b6d029; /* 지정해주신 색상 */
+        color: black;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    /* (선택) label 스타일 */
+    .center-container label {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+</style>

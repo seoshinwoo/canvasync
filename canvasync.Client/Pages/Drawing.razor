@@ -55,9 +55,111 @@
                 />
             </section>
             <section class="right">
+                @if (_selectedFactor is not null || _isPen)
+                {    
+                    <div class="properties-panel">
+                        <h3>Properties</h3>
+                        
+                        <div class="property-group">
+                            <label for="color-picker">Color</label>
+                            <input type="color" id="color-picker">
+                        </div>
+
+                        @if (_selectedFactor is FactorRect || _selectedFactor is FactorCircle)
+                        {
+                            // 색 채우기
+                            <div class="property-group-toggle">
+                                <label for="font-bold">Fill</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="font-bold">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        }
+
+                        @if (_selectedFactor is FactorText)
+                        {
+                            <div class="property-group">
+                                <label for="font-size-input">Size (px)</label>
+                                <input type="number" id="font-size-input" min="1" max="100">
+                            </div>
+
+                            <div class="property-group">
+                                <label for="font-family">Font</label>
+                                <select id="font-family">
+                                    <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
+                                    <option value="Verdana" style="font-family: Verdana, sans-serif;">Verdana</option>
+                                    <option value="Times New Roman" style="font-family: 'Times New Roman', Times, serif;">Times New Roman</option>
+                                    <option value="Courier New" style="font-family: 'Courier New', Courier, monospace;">Courier New</option>
+                                    <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
+                                </select>
+                            </div>
+
+                            <div class="property-group-stacked">
+                                <label for="text-content">Text</label>
+                                <textarea id="text-content" 
+                                        rows="4" 
+                                        placeholder="Enter text here..."  
+                                        @bind:event="oninput"></textarea>
+                            </div>
+                        }
+
+                        @if (_isPen)
+                        {
+                            <div class="property-group-stacked">
+                            <div class="label-row">
+                                <label for="font-size-slider">Transparency</label>
+                                <span class="value-readout">30</span>
+                            </div>
+                            <input type="range" class="slider-control" id="font-size-slider" min="1" max="100" step="1" @bind:event="oninput"> </div>
+
+                            <div class="property-group-stacked">
+                            <div class="label-row">
+                                <label for="font-size-slider">Thickness</label>
+                                <span class="value-readout">30</span>
+                            </div>
+                            <input type="range" class="slider-control" id="font-size-slider" min="1" max="100" step="1" @bind:event="oninput"> </div>
+                        }
+
+                        @* <div class="property-group">
+                            <label for="font-size-input">Transparency</label>
+                            <input type="number" id="font-size-input" min="1" max="100">
+                        </div> *@
+
+                        @* <div class="property-group">
+                            <label for="font-size-select">Font Size</label>
+                            <select id="font-size-select">
+                                <option value="12px">12px</option>
+                                <option value="14px">14px</option>
+                                <option value="16px">16px (Default)</option>
+                                <option value="18px">18px</option>
+                                <option value="24px">24px</option>
+                            </select>
+                        </div> *@
+
+                        
+
+                        @* <div class="property-group-toggle">
+                            <label for="font-italic">Italic</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="font-italic">
+                                <span class="slider round"></span>
+                            </label>
+                        </div> *@
+
+                        
+                    </div>
+
+                    <div class="right-button-container">
+                        <button class="secondary">Cancel</button>
+                        <button class="danger">Delete</button>
+                    </div>
+                }
+            </section>
+            @* <section class="right">
                 @if (_selectedFactor is FactorRect)
                 {
-
+                    
                 }
 
                 @if (_selectedFactor is FactorCircle)
@@ -90,12 +192,12 @@
                                 style="width: 40px; height: 40px; border: none; border-radius: 6px; cursor: pointer;" />
                     </div>
                 }
+            </section> *@
                 @* <div class="fixed-footer">
                     <button class="btn btn-secondary" style="flex: 1;">취소</button>
                     <button class="btn btn-primary" style="flex: 1;">저장</button>
                     <button class="btn btn-danger" style="flex: 1;">삭제</button>
                 </div> *@
-            </section>
         }
         else
         {
@@ -799,12 +901,14 @@
 }
 
 .right {
+    display: flex;
+    flex-direction: column;
     background: #ffffff;
     border: 1px solid #e7e7ea;
     border-radius: 12px;
     padding: 12px;
     min-height: 0;
-    overflow: auto; /* 내용이 넘치면 해당 칸만 스크롤 */
+    overflow: hidden; /* 내용이 넘치면 해당 칸만 스크롤 */
 }
 
 .center {
@@ -848,5 +952,298 @@ section.center > skcanvasview {
 
     display: flex;      /* Flexbox 레이아웃 사용 */
     gap: 5px;          /* 버튼 사이의 간격을 15px로 설정 (붙는 문제 해결) */
+}
+
+
+@* 여기서부터 section-right *@
+.properties-panel {
+    background-color: #ffffff;
+    border-radius: 8px; /* 둥근 모서리 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* 은은한 그림자 */
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/*
+ * 패널 제목 (예: "Properties")
+ */
+.properties-panel h3 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 18px;
+    color: #333;
+    border-bottom: 1px solid #eee; /* 제목 아래 구분선 */
+    padding-bottom: 12px;
+}
+
+/*
+ * 각 속성 그룹 (Label + Input)
+ */
+.property-group {
+    display: flex;
+    justify-content: space-between; /* 라벨은 왼쪽, 컨트롤은 오른쪽 */
+    align-items: center;
+    margin-bottom: 16px; /* 각 속성 사이의 간격 */
+}
+
+.property-group label {
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+}
+
+/*
+ * 드롭다운(select) 및 숫자 입력(input[type=number]) 공통 스타일
+ */
+.property-group select,
+.property-group input[type="number"] {
+    width: 140px; /* 컨트롤의 너비 고정 */
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit; /* 페이지 기본 글꼴 상속 */
+    background-color: #fff;
+}
+
+.property-group input[type="number"] {
+    /* 숫자 입력칸 화살표가 겹치지 않게 오른쪽 패딩 추가 */
+    padding-right: 10px;
+}
+
+/*
+ * 색상 선택(input[type=color]) 특별 스타일
+ */
+.property-group input[type="color"] {
+    /* 브라우저 기본 스타일 제거 */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    width: 44px; /* 정사각형 모양 */
+    height: 44px;
+    border: none; /* 테두리 제거 */
+    border-radius: 8px; /* 둥근 모서리 */
+    padding: 0;
+    cursor: pointer;
+    background-color: transparent; /* 배경 제거 */
+    
+    /* 색상 미리보기 영역(swatch) 스타일 */
+    border: 1px solid #ccc; /* 미리보기 영역에도 테두리 */
+}
+
+/* Chrome/Safari/Edge용 색상 스와치 */
+.property-group input[type="color"]::-webkit-color-swatch {
+    border-radius: 6px; /* 내부 스와치도 둥글게 */
+    border: none;
+}
+
+/* Firefox용 색상 스와치 */
+.property-group input[type="color"]::-moz-color-swatch {
+    border-radius: 6px;
+    border: none;
+}
+
+.property-group-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px; /* 각 속성 사이의 간격 */
+}
+
+.property-group-toggle label {
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+}
+
+/* * 토글 스위치 (W3Schools 디자인 기반)
+ * https://www.w3schools.com/howto/howto_css_switch.asp
+ */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px; /* 스위치 너비 */
+    height: 28px; /* 스위치 높이 */
+}
+
+/* 실제 HTML 체크박스는 숨김 */
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* 스위치 배경 (트랙) */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc; /* 비활성(false) 상태 배경색 */
+    transition: .4s; /* 애니메이션 */
+}
+
+/* 스위치 핸들 (원) */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px; /* 원 높이 */
+    width: 20px; /* 원 너비 */
+    left: 4px; /* 왼쪽 여백 */
+    bottom: 4px; /* 아래쪽 여백 */
+    background-color: white; /* 원 색상 */
+    transition: .4s; /* 애니메이션 */
+}
+
+/* 체크됐을 때(true) 스타일 */
+input:checked + .slider {
+    background-color: #007bff; /* 활성(true) 상태 배경색 (예: 파란색) */
+}
+
+input:checked + .slider:before {
+    /* 핸들(원)을 오른쪽으로 이동 */
+    transform: translateX(22px); /* (너비 50px - 원 너비 20px - 여백 4px*2) = 22px */
+}
+
+/* 스위치 모서리 둥글게 */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%; /* 원 모양 */
+}
+
+/*
+ * 텍스트 영역(textarea)을 위한 그룹 스타일 (라벨을 위에 배치)
+ */
+.property-group-stacked {
+    margin-bottom: 16px; /* 다른 그룹과의 간격 */
+}
+
+.property-group-stacked label {
+    display: block; /* 라벨을 블록 요소로 만들어 줄바꿈 */
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+    margin-bottom: 8px; /* 라벨과 textarea 사이의 간격 */
+}
+
+/*
+ * Textarea 기본 스타일
+ */
+.property-group-stacked textarea {
+    /* 너비를 100%로 설정하여 패널에 꽉 차게 */
+    width: 100%; 
+    
+    /* 다른 컨트롤과 스타일 통일 */
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit; /* 페이지 기본 글꼴 상속 */
+    background-color: #fff;
+    
+    /* 사용자가 세로로만 크기를 조절할 수 있게 함 
+       (가로 조절은 레이아웃을 깨뜨릴 수 있음) */
+    resize: vertical; 
+    
+    min-height: 80px; /* rows="4"와 비슷하게 최소 높이 지정 */
+
+    /* padding과 border가 width 계산에 포함되도록 설정 */
+    box-sizing: border-box; 
+}
+
+/* (선택 사항) textarea가 포커스될 때 테두리 스타일 */
+.property-group-stacked textarea:focus {
+    border-color: #007bff; /* 활성 상태 테두리 색상 */
+    outline: none; /* 기본 outline 제거 */
+    box-shadow: 0 0 0 2px rgba(0,123,255,.25); /* 은은한 그림자 효과 */
+}
+
+.right-button-container {
+    /* 자식(버튼)들을 가로로 정렬 */
+    display: flex;
+    
+    /* 버튼 사이의 간격 */
+    gap: 10px;
+    
+    flex-grow: 1;
+
+    /* 버튼들을 오른쪽으로 정렬 */
+    justify-content: center; 
+
+    align-items: flex-end;
+
+    /* .properties-panel의 flex-grow: 1 때문에 이 컨테이너는
+       자동으로 .right 섹션의 맨 아래에 위치하게 됩니다. */
+}
+
+/* (추가) 버튼 기본 스타일 */
+.right-button-container button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+/* (추가) 강조 버튼 (예: Apply) */
+.right-button-container button.danger {
+    background-color: #F31C1D; /* 빨간색 계열 */
+    color: white;
+}
+.right-button-container button.danger:hover {
+    background-color: #700A0B;
+}
+
+/* (추가) 보조 버튼 (예: Cancel) */
+.right-button-container button.secondary {
+    background-color: #e0e0e0; /* 회색 계열 */
+    color: #333;
+}
+.right-button-container button.secondary:hover {
+    background-color: #c7c7c7;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between; /* 라벨은 왼쪽, 값은 오른쪽 */
+    align-items: center;
+    margin-bottom: 8px; /* 슬라이더와의 간격 */
+}
+
+/* .property-group-stacked 안의 라벨은 margin-bottom이
+   기본 적용될 수 있으므로, .label-row 안에선 0으로 재정의 */
+.label-row label {
+    margin-bottom: 0; 
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+}
+
+/* 현재 값(숫자) 표시 스타일 */
+.value-readout {
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+    background-color: #f0f0f0; /* 값을 감싸는 연한 배경 */
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 30px; /* 숫자가 작아도 최소 너비 유지 */
+    text-align: center; /* 숫자 중앙 정렬 */
+}
+
+/* 슬라이더(input[type=range]) 기본 스타일 */
+.slider-control {
+    /* 슬라이더 너비를 패널에 꽉 차게 */
+    width: 100%;
+    cursor: pointer;
+    margin: 0;
 }
 </style>

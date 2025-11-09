@@ -8,35 +8,55 @@
 @inject NavigationManager NavigationManager
 @inject IWebHostEnvironment WebHostEnvironment
 
-<div style="color: #5C6916; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+@* <div style="color: #5C6916; background-color:#21241B; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
     
     @if (!IsConverting)
     {
         <label for="file-input" class="btn-custom-style">
-            파일 선택 📂
+            File 📂
         </label>
-        @* <InputFile id="file-input" OnChange="HandleFileSelection" style="display: none;" /> *@
+        <InputFile id="file-input" OnChange="HandleFileSelection" style="display: none;" />
     }
     else if (!IsConvertingDone)
     {
-        <p>변환 중... 잠시만 기다려주세요.</p>
+        <h6>Converting..</h6>
     }
     else
     {
-        @* <h3>변환된 이미지</h3>
-        <div class="image-container">
-            @foreach (var imageUrl in imageUrls)
-            {
-                <img src="@imageUrl" class="converted-image" />
-            }
-        </div> *@
         <div>@_fileName</div>
-        <div>변환 완료!!</div>
         <div>
-            <button @onclick="SelectNewFile">다른 파일 선택</button>
+            <button @onclick="SelectNewFile">New File</button>
         </div>
         <button class="goto-canvas-btn" @onclick="StartPresentation">
-            프레젠테이션 시작하기
+            Start Presentation
+        </button>
+    }
+</div> *@
+
+<div class="dark-center-container">
+    @if (!IsConverting)
+    {
+        <div class="header-text">Upload PDF</div>
+
+        <label for="new-file-input" class="styled-btn">
+            New File
+        </label>
+
+        <InputFile id="new-file-input" OnChange="HandleFileSelection" style="display: none;" />
+    }
+    else if (!IsConvertingDone)
+    {
+        <h6 style="color:#b6d029">Converting..</h6>
+    }
+    else
+    {
+        <div class="header-text">@_fileName</div>
+        <button class="styled-btn" @onclick="SelectNewFile">
+            New File
+        </button>
+
+        <button class="goto-canvas-btn" @onclick="StartPresentation">
+            Start Presentation
         </button>
     }
 </div>
@@ -56,7 +76,7 @@
         Console.WriteLine($"hostEnvironment.EnvironmentName : {hostEnvironment.EnvironmentName}");
         if (hostEnvironment.EnvironmentName == "Development")
         {
-            await TestFileSelect();
+            // await TestFileSelect();
         }
     }
 
@@ -132,8 +152,8 @@
 
     private async Task HandleFileSelection(InputFileChangeEventArgs e)
     {
-        var lecture = new Lecture();
-        lecture.FileName = "LecturePDF.pdf";
+        _lecture = new Lecture();
+        _lecture.FileName = "LecturePDF.pdf";
 
         _imageUrls?.Clear();
         IsConverting = true;
@@ -155,7 +175,7 @@
                 try
                 {
                     await pdfFile.OpenReadStream(maxFileSize).CopyToAsync(ms);
-                    lecture.PdfFileBytes = ms.ToArray();
+                    _lecture.PdfFileBytes = ms.ToArray();
                 }
                  catch (JSDisconnectedException)
                 {
@@ -169,11 +189,10 @@
 
             try
             {
-                var images = PDFtoImage.Conversion.ToImages(lecture.PdfFileBytes);
+                var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
 
                 _imageUrls = new List<string>();
                 var count = 0;
-                var pages = new List<Page>();
 
                 foreach (var img in images)
                 {
@@ -192,7 +211,7 @@
                     page.Width = img.Width;
                     page.Height = img.Height;
 
-                    lecture.Pages.Add(page);
+                    _lecture.Pages.Add(page);
 
                     count++;
                 }
@@ -208,7 +227,7 @@
             }
         }
 
-        StateContainer.Lectures.Add(lecture);
+        StateContainer.Lectures.Add(_lecture);
     }
 
     private void SelectNewFile()
@@ -259,11 +278,62 @@
         bottom: 20px;
         right: 20px;
         padding: 12px 20px;
-        background-color: #007bff;
+        background-color: #5C6916;
         color: white;
         border: none;
         border-radius: 8px;
         cursor: pointer;
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .dark-center-container {
+        /* 1. 핵심: 화면 전체 높이를 기준으로 정렬하기 위해 'vh' 사용 */
+        min-height: 100vh;
+        
+        /* 2. 핵심: 아이템(자식 요소) 간의 간격을 줌 */
+        gap: 1.5rem; /* 약 24px */
+
+        /* --- (사용자 설정값은 그대로 유지) --- */
+        color: #5C6916; 
+        background-color: #21241B; 
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    /* (선택) 상단 텍스트 스타일 */
+    .header-text {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ddd; /* 어두운 배경이라 텍스트 색을 밝게 조정 */
+    }
+
+    /* 'New File', 'Start Presentation' 버튼 공통 스타일 */
+    .styled-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        background-color: #5C6916; /* 제공해주신 메인 컬러 */
+        color: white;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        width: 250px; /* 너비를 통일하여 깔끔하게 */
+        text-align: center;
+    }
+
+    /* InputFile (파일 선택) 스타일링 */
+    .styled-input-file::file-selector-button {
+        /* 위 버튼(.styled-btn)과 디자인 통일 */
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        background-color: #3a3f2c; /* 메인 컬러보다 약간 어두운 톤 */
+        color: white;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        width: 250px; /* 너비 통일 */
     }
 </style>

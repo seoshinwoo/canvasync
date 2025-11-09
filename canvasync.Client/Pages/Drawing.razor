@@ -16,8 +16,8 @@
 <div class="page-layout">
     <!-- 상단 -->
     <div class="top" style="background-color: #b6d029;">
-        <h3 @onclick="BackToHome">CanvaSync</h3>
-        <div style="display: flex; flex-direction: row; width: 100%; gap: 10px">
+        <h3 @onclick="BackToHome" style="cursor: pointer">CanvaSync</h3>
+        <div style="display: flex; flex-direction: row; width: 20%; gap: 10px">
             <div class="factor-rect-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Rect) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Rect)'></div>   
             <div class="factor-circle-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Circle) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Circle)'></div>   
             <div class="factor-line-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Line) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Line)'></div>   
@@ -25,8 +25,8 @@
             <div class="factor-pen-icon hover-btn" style="background-color: @((_isPen) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Pen)'></div>   
         </div>
         <div class="button-group">
-            <button @onclick="DeleteAll">Save</button>
-            <button @onclick="Print">Print</button>
+            <button class="btn-opt" style="background-color: #F87C63" @onclick="DeleteAll">Save</button>
+            <button class="btn-opt" style="background-color: #44CFCF" @onclick="Print">Print</button>
         </div>
     </div>
 
@@ -55,9 +55,6 @@
                 />
             </section>
             <section class="right">
-                
-
-                <hr>
                 @if (_selectedFactor is FactorRect)
                 {
 
@@ -93,7 +90,6 @@
                                 style="width: 40px; height: 40px; border: none; border-radius: 6px; cursor: pointer;" />
                     </div>
                 }
-                <hr>
                 @* <div class="fixed-footer">
                     <button class="btn btn-secondary" style="flex: 1;">취소</button>
                     <button class="btn btn-primary" style="flex: 1;">저장</button>
@@ -693,7 +689,7 @@
 
     private void BackToHome()
     {
-        // 
+        Navigation.NavigateTo("/");
     }
 
     private SKImage LoadImageFromBase64(string base64)

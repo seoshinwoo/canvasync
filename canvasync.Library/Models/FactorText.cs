@@ -63,24 +63,31 @@ public class FactorText : Factor
         Box = factor.Box;
     }
 
-    public void MeasureTextSize()
-    {
-        TextBlocks[0].Width = Font.MeasureText(TextBlocks[0].Text);
-        Font.GetFontMetrics(out SKFontMetrics metrics);
-        TextBlocks[0].Height = metrics.Descent - metrics.Ascent;
+    // public void MeasureTextSize()
+    // {
+    //     TextBlocks[0].Width = Font.MeasureText(TextBlocks[0].Text);
+    //     Font.GetFontMetrics(out SKFontMetrics metrics);
+    //     TextBlocks[0].Height = metrics.Descent - metrics.Ascent;
 
-        if (TextBlocks[0].Width > Box.Width)
-        {
-            Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
-        }
-    }
+    //     if (TextBlocks[0].Width > Box.Width)
+    //     {
+    //         Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
+    //     }
+    // }
 
     public void TextChanged(string text)
     {
         TextBlocks[0].Text = text;
         TextBlocks[0].MeasureTextSize();
 
-        Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Bottom);
+        Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
+    }
+
+    public void TextSizeChanged()
+    {
+        TextBlocks[0].MeasureTextSize();
+        
+        Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
     }
     public override void Draw(SKCanvas canvas, float ratio = 1f, float x = 0, float y = 0)
     {

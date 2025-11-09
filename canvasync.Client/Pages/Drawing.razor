@@ -62,26 +62,26 @@
                         
                         <div class="property-group">
                             <label for="color-picker">Color</label>
-                            <input type="color" id="color-picker">
+                            <input type="color" id="color-picker" @bind="_selectedColor" @oninput="ColorChanged" />
                         </div>
 
                         @if (_selectedFactor is FactorRect || _selectedFactor is FactorCircle)
                         {
-                            // 색 채우기
                             <div class="property-group-toggle">
                                 <label for="font-bold">Fill</label>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" id="font-bold">
+                                    <input type="checkbox" id="font-bold" checked=@(_selectedFactor.Paint.Style == SKPaintStyle.Fill) 
+                                        @onclick="FactorFill" >
                                     <span class="slider round"></span>
                                 </label>
                             </div>
                         }
 
-                        @if (_selectedFactor is FactorText)
+                        @if (_selectedFactor is FactorText factorText)
                         {
                             <div class="property-group">
                                 <label for="font-size-input">Size (px)</label>
-                                <input type="number" id="font-size-input" min="1" max="100">
+                                <input type="number" id="font-size-input" min="1" max="1000" step="10" @bind="factorText.TextBlocks[0].Font.Size" @oninput="TextSizeChanged">
                             </div>
 
                             <div class="property-group">
@@ -100,7 +100,7 @@
                                 <textarea id="text-content" 
                                         rows="4" 
                                         placeholder="Enter text here..."  
-                                        @bind:event="oninput"></textarea>
+                                        @bind="factorText.Text" @oninput="TextChanged"></textarea>
                             </div>
                         }
 
@@ -109,95 +109,25 @@
                             <div class="property-group-stacked">
                             <div class="label-row">
                                 <label for="font-size-slider">Transparency</label>
-                                <span class="value-readout">30</span>
+                                <span class="value-readout">@_selectedPenAlpha</span>
                             </div>
-                            <input type="range" class="slider-control" id="font-size-slider" min="1" max="100" step="1" @bind:event="oninput"> </div>
+                            <input type="range" class="slider-control" id="font-size-slider" min="0" max="255" step="1" @bind="_selectedPenAlpha"> </div>
 
                             <div class="property-group-stacked">
                             <div class="label-row">
                                 <label for="font-size-slider">Thickness</label>
-                                <span class="value-readout">30</span>
+                                <span class="value-readout">@_selectedPenThickness</span>
                             </div>
-                            <input type="range" class="slider-control" id="font-size-slider" min="1" max="100" step="1" @bind:event="oninput"> </div>
+                            <input type="range" class="slider-control" id="font-size-slider" min="1" max="15" step="1" @bind="_selectedPenThickness"> </div>
                         }
-
-                        @* <div class="property-group">
-                            <label for="font-size-input">Transparency</label>
-                            <input type="number" id="font-size-input" min="1" max="100">
-                        </div> *@
-
-                        @* <div class="property-group">
-                            <label for="font-size-select">Font Size</label>
-                            <select id="font-size-select">
-                                <option value="12px">12px</option>
-                                <option value="14px">14px</option>
-                                <option value="16px">16px (Default)</option>
-                                <option value="18px">18px</option>
-                                <option value="24px">24px</option>
-                            </select>
-                        </div> *@
-
-                        
-
-                        @* <div class="property-group-toggle">
-                            <label for="font-italic">Italic</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="font-italic">
-                                <span class="slider round"></span>
-                            </label>
-                        </div> *@
-
-                        
                     </div>
 
                     <div class="right-button-container">
                         <button class="secondary">Cancel</button>
-                        <button class="danger">Delete</button>
+                        <button class="danger" @onclick="() => DeleteFactor()">Delete</button>
                     </div>
                 }
             </section>
-            @* <section class="right">
-                @if (_selectedFactor is FactorRect)
-                {
-                    
-                }
-
-                @if (_selectedFactor is FactorCircle)
-                {
-
-                }
-
-                @if (_selectedFactor is FactorLine)
-                {
-                    
-                }
-
-                @if (_selectedFactor is FactorText factorText)
-                {
-                    if (_selectedFactor.Paint is null) { _selectedFactor.Paint = new SKPaint(); }
-                        
-                    <textarea @bind="factorText.Text" @oninput="TextChanged"/> 
-                }
-
-                @if (_isPen)
-                {
-                    
-                }
-
-                @if (_selectedFactor is not null || _isPen)
-                {
-                    <div>
-                        <span style="font-weight: 500; font-size: 25px;">🎨 Color</span>
-                            <input type="color" @bind="_selectedColor" @oninput="ColorChanged"
-                                style="width: 40px; height: 40px; border: none; border-radius: 6px; cursor: pointer;" />
-                    </div>
-                }
-            </section> *@
-                @* <div class="fixed-footer">
-                    <button class="btn btn-secondary" style="flex: 1;">취소</button>
-                    <button class="btn btn-primary" style="flex: 1;">저장</button>
-                    <button class="btn btn-danger" style="flex: 1;">삭제</button>
-                </div> *@
         }
         else
         {
@@ -227,6 +157,8 @@
     private string _imgSrc = string.Empty;
     private Factor? _selectedFactor;
     private string _selectedColor = "#000000";
+    private float _selectedPenThickness = 5f;
+    private byte _selectedPenAlpha = 255;
     private SKSize _canvasSize;
     private string _text = string.Empty;
     private bool _isMousePressed = false;
@@ -427,17 +359,23 @@
             {
                 Color = SKColor.Parse(_selectedColor),
                 Style = SKPaintStyle.Stroke,
-                StrokeWidth = 5f / _ratio,
+                StrokeWidth = _selectedPenThickness / _ratio,
                 IsAntialias = true
             };
+
+            Console.WriteLine($"_selectedPenAlpha : {_selectedPenAlpha}");
+            penPaint.Color = penPaint.Color.WithAlpha(_selectedPenAlpha);
 
             _factorPen = new FactorPen(penPaint);
             _selectedPage?.Factors.Add(_factorPen);
 
-            var pageIndex = _pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
+            if (memberType == "host")
+            {
+                var pageIndex = _pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
 
-            await Send(pageIndex, factorIndex, "Add", _factorPen);
+                await Send(pageIndex, factorIndex, "Add", _factorPen);
+            }
 
             _factorPen?.PenPath.MoveTo(mousePoint.X, mousePoint.Y);
             _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
@@ -614,10 +552,31 @@
         {
             factorText.TextChanged(e.Value?.ToString() ?? string.Empty);
 
-            var pageIndex = _pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
-            await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+            if (memberType == "host")
+            {
+                var pageIndex = _pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+                await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+            }
+        }
+    }
+
+    private async Task TextSizeChanged()
+    {
+        if(_selectedFactor is FactorText factorText)
+        {
+            factorText.TextSizeChanged();
+
+
+            if (memberType == "host")
+            {
+                var pageIndex = _pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+                await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+            }
         }
     }
 
@@ -635,10 +594,13 @@
                 _selectedFactor.Paint.Color = SKColor.Parse(_selectedColor);
             }
 
-            var pageIndex = _pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+            if (memberType == "host")
+            {
+                var pageIndex = _pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
-            await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+                await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+            }
         }
     }
 
@@ -746,7 +708,31 @@
             }
         }
     }
+    private async Task FactorFill()
+    {
+        _selectedFactor.Paint.Style = _selectedFactor.Paint.Style == SKPaintStyle.Fill ? SKPaintStyle.Stroke : SKPaintStyle.Fill;
 
+        if (memberType == "host")
+        {
+            var pageIndex = _pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+            await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+        }
+    }
+    private async Task DeleteFactor()
+    {
+        if (memberType == "host")
+        {
+            var pageIndex = _pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+            await Send(pageIndex, factorIndex, "Delete", _selectedFactor);
+        }
+
+        _selectedPage.Factors.Remove(_selectedFactor);
+        _selectedFactor = null;
+    }
     private void DeleteAll()
     {
         foreach (var page in _pages)

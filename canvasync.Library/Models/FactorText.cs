@@ -4,6 +4,7 @@ namespace canvasync.Library.Models;
 
 public class FactorText : Factor
 {
+    public static SKTypeface Typeface;
     public List<TextBlock> TextBlocks { get; set; } = new(){new TextBlock(){ Text = string.Empty }};
     public string _text = string.Empty;
     public string Text
@@ -93,7 +94,7 @@ public class FactorText : Factor
     {
         foreach (var textBlock in TextBlocks)
         {
-            var drawFont = new SKFont();
+            var drawFont = new SKFont(Typeface);
             drawFont.Size = textBlock.Font.Size * ratio;
 
             // var drawPaint = textBlock.Paint.Clone();
@@ -116,6 +117,7 @@ public class TextBlock
 
     public void MeasureTextSize()
     {
+        Font.Typeface = FactorText.Typeface;
         Width = Font.MeasureText(Text);
         Font.GetFontMetrics(out SKFontMetrics metrics);
         Height = metrics.Descent - metrics.Ascent;

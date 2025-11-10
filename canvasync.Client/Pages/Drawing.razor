@@ -84,17 +84,6 @@
                                 <input type="number" id="font-size-input" min="1" max="1000" step="10" @bind="factorText.TextBlocks[0].Font.Size" @oninput="TextSizeChanged">
                             </div>
 
-                            <div class="property-group">
-                                <label for="font-family">Font</label>
-                                <select id="font-family">
-                                    <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
-                                    <option value="Verdana" style="font-family: Verdana, sans-serif;">Verdana</option>
-                                    <option value="Times New Roman" style="font-family: 'Times New Roman', Times, serif;">Times New Roman</option>
-                                    <option value="Courier New" style="font-family: 'Courier New', Courier, monospace;">Courier New</option>
-                                    <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
-                                </select>
-                            </div>
-
                             <div class="property-group-stacked">
                                 <label for="text-content">Text</label>
                                 <textarea id="text-content" 
@@ -123,7 +112,7 @@
                     </div>
 
                     <div class="right-button-container">
-                        <button class="secondary">Cancel</button>
+                        @* <button class="secondary">Cancel</button> *@
                         <button class="danger" @onclick="() => DeleteFactor()">Delete</button>
                     </div>
                 }
@@ -177,6 +166,7 @@
     private float _startY;
     private float _ratio;
     private bool _isPen = false;
+    private SKTypeface customTypeface;
     
     
     protected override async Task OnInitializedAsync()
@@ -245,6 +235,17 @@
         catch (Exception ex)
         {
             Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
+        }
+
+        try
+        {
+            var fontBytes = await HttpClient.GetByteArrayAsync("http://localhost:5175/fonts/NotoSansKR-SemiBold.ttf");
+            customTypeface = SKTypeface.FromData(SKData.CreateCopy(fontBytes));
+            FactorText.Typeface = customTypeface;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"폰트 로딩 실패 : {ex.Message}");
         }
     }
 

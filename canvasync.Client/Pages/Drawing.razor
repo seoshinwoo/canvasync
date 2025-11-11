@@ -107,7 +107,7 @@
                                 <label for="font-size-slider">Thickness</label>
                                 <span class="value-readout">@_selectedPenThickness</span>
                             </div>
-                            <input type="range" class="slider-control" id="font-size-slider" min="1" max="15" step="1" @bind="_selectedPenThickness"> </div>
+                            <input type="range" class="slider-control" id="font-size-slider" min="1" max="30" step="1" @bind="_selectedPenThickness"> </div>
                         }
                     </div>
 
@@ -215,7 +215,9 @@
 
         try
         {
-            var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>($"http://localhost:5175/api/pdfimages/{lectureId}") ?? new List<PageDto>();
+            // var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>($"http://localhost:5175/api/pdfimages/{lectureId}") ?? new List<PageDto>();
+            var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>(Navigation.ToAbsoluteUri($"/api/pdfimages/{lectureId}")) ?? new List<PageDto>();
+            
             var hostPages = PageDto.PageDtosToPages(pageDtos);
             foreach (var hostPage in hostPages)
             {
@@ -239,7 +241,8 @@
 
         try
         {
-            var fontBytes = await HttpClient.GetByteArrayAsync("http://localhost:5175/fonts/NotoSansKR-SemiBold.ttf");
+            // var fontBytes = await HttpClient.GetByteArrayAsync("http://localhost:5175/fonts/NotoSansKR-SemiBold.ttf");
+            var fontBytes = await HttpClient.GetByteArrayAsync(Navigation.ToAbsoluteUri($"/fonts/NotoSansKR-SemiBold.ttf"));
             customTypeface = SKTypeface.FromData(SKData.CreateCopy(fontBytes));
             FactorText.Typeface = customTypeface;
         }
@@ -752,7 +755,8 @@
             using var content = new MultipartFormDataContent();
             var drawingsDtoJson = JsonSerializer.Serialize(drawingsDto);
             content.Add(new StringContent(drawingsDtoJson), "drawings");
-            var response = await HttpClient.PostAsync($"http://localhost:5175/api/pdfdownload/make-pdf/{lectureId}", content);
+            // var response = await HttpClient.PostAsync($"http://localhost:5175/api/pdfdownload/make-pdf/{lectureId}", content);
+            var response = await HttpClient.PostAsync(Navigation.ToAbsoluteUri($"api/pdfdownload/make-pdf/{lectureId}"), content);
 
             if (response.IsSuccessStatusCode)
             {

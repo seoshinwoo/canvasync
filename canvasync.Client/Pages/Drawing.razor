@@ -52,6 +52,9 @@
                     @onmouseup="MouseUp"
                     @onmouseout="MouseOut"
                     @onmouseover="MouseIn"
+                    @ontouchstart="TouchStart"
+                    @ontouchmove="TouchMove"
+                    @ontouchend="TouchEnd"
                 />
             </section>
             <section class="right">
@@ -250,12 +253,20 @@
         {
             Console.WriteLine($"폰트 로딩 실패 : {ex.Message}");
         }
+        
+        if (_pages.Count() > 0)
+        {
+            _selectedPage = _pages[0];
+        }
+        else
+        {
+            Console.WriteLine($"_pages Not Loaded");
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         _pageLoadDone = true;
-
     }
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
@@ -367,7 +378,6 @@
                 IsAntialias = true
             };
 
-            Console.WriteLine($"_selectedPenAlpha : {_selectedPenAlpha}");
             penPaint.Color = penPaint.Color.WithAlpha(_selectedPenAlpha);
 
             _factorPen = new FactorPen(penPaint);
@@ -532,6 +542,21 @@
     }
 
     private void MouseIn(MouseEventArgs args)
+    {
+
+    }
+
+    private async Task TouchStart(TouchEventArgs args)
+    {
+
+    }
+
+    private async Task TouchMove(TouchEventArgs args)
+    {
+
+    }
+
+    private async Task TouchEnd(TouchEventArgs args)
     {
 
     }

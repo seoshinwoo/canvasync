@@ -1,4 +1,0 @@
-{
-    "appService.defaultWebAppToDeploy": "/subscriptions/bfdfab18-c3d0-426f-b021-78dacec7b948/resourceGroups/CanvaSnyc/providers/Microsoft.Web/sites/CanvaSync",
-    "appService.deploySubpath": "canvasync/bin/Release/net9.0/publish"
-}

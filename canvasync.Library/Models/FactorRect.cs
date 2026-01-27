@@ -23,7 +23,6 @@ public class FactorRect : Factor
         var drawPaint = Paint.Clone();
         drawPaint.StrokeWidth = Paint.StrokeWidth * ratio;
 
-        // canvas.DrawText($"({Box.Left},{Box.Top})", Box.Left * ratio + 10, Box.Top * ratio + 10, font, Paint);
         canvas.DrawRect(Box.Left * ratio + x, Box.Top * ratio + y, Box.Width * ratio, Box.Height * ratio, drawPaint);
     }
 }

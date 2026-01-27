@@ -16,7 +16,6 @@ public class FactorText : Factor
 
         set
         {
-            // _text = value;
             TextBlocks[0].Text = value;
         }
     }
@@ -64,18 +63,6 @@ public class FactorText : Factor
         Box = factor.Box;
     }
 
-    // public void MeasureTextSize()
-    // {
-    //     TextBlocks[0].Width = Font.MeasureText(TextBlocks[0].Text);
-    //     Font.GetFontMetrics(out SKFontMetrics metrics);
-    //     TextBlocks[0].Height = metrics.Descent - metrics.Ascent;
-
-    //     if (TextBlocks[0].Width > Box.Width)
-    //     {
-    //         Box = new SKRect(Box.Left, Box.Top, Box.Left + TextBlocks[0].Width, Box.Top + TextBlocks[0].Height);
-    //     }
-    // }
-
     public void TextChanged(string text)
     {
         TextBlocks[0].Text = text;
@@ -121,8 +108,5 @@ public class TextBlock
         Width = Font.MeasureText(Text);
         Font.GetFontMetrics(out SKFontMetrics metrics);
         Height = metrics.Descent - metrics.Ascent;
-
-        // SKRect textBounds = new SKRect();
-        // Font.MeasureText(Text, out textBounds);
     }
 }

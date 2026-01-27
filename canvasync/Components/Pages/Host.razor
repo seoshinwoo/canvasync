@@ -8,31 +8,6 @@
 @inject NavigationManager NavigationManager
 @inject IWebHostEnvironment WebHostEnvironment
 
-@* <div style="color: #5C6916; background-color:#21241B; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-    
-    @if (!IsConverting)
-    {
-        <label for="file-input" class="btn-custom-style">
-            File 📂
-        </label>
-        <InputFile id="file-input" OnChange="HandleFileSelection" style="display: none;" />
-    }
-    else if (!IsConvertingDone)
-    {
-        <h6>Converting..</h6>
-    }
-    else
-    {
-        <div>@_fileName</div>
-        <div>
-            <button @onclick="SelectNewFile">New File</button>
-        </div>
-        <button class="goto-canvas-btn" @onclick="StartPresentation">
-            Start Presentation
-        </button>
-    }
-</div> *@
-
 <div class="dark-center-container">
     @if (!IsConverting)
     {

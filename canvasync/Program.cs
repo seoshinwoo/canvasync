@@ -1,6 +1,5 @@
 using canvasync.Components;
 using canvasync.Containers;
-using canvasync.Services;
 using Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 
@@ -31,8 +30,6 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<StateContainer>();
-
-builder.Services.AddSingleton<PdfService>();
 
 var app = builder.Build();
 

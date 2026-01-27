@@ -6,20 +6,20 @@
 
 <div class="center-container">
     <label for="addressInput">Code :</label>
-    <input id="addressInput" class="pretty-input" @bind="_lectureId"/>
+    <input id="addressInput" class="pretty-input" @bind="_lectureCode"/>
     <button @onclick="Enter" class="pretty-button">Enter</button>
 </div>
 
 @code
 {
-    private string _lectureId = string.Empty;
+    private string _lectureCode = string.Empty;
     private bool _isPresentationOpened = true;
     private void Enter()
     {
-        var lecture = StateContainer.Lectures.Where(lec => lec.Id == _lectureId).FirstOrDefault();
+        var lecture = StateContainer.Lectures.Where(lec => lec.Code == _lectureCode).FirstOrDefault();
         if (lecture.Pages.Count > 0)
         {
-            NavigationManager.NavigateTo($"/drawing/guest/{_lectureId}");
+            NavigationManager.NavigateTo($"/drawing/guest/{lecture.Id}");
         }
         else
         {

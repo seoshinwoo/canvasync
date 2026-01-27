@@ -25,7 +25,11 @@
     }
     else
     {
-        <div class="header-text">@_fileName</div>
+        @if (_lecture is not null)
+        {
+            <div class="header-text">@_lecture.FileName</div>
+            <div style="font-size: 1rem; color: #b6d029; margin-top: -10px; margin-bottom: 20px;">Code: @_lecture.Code</div>
+        }
         <button class="styled-btn" @onclick="SelectNewFile">
             New File
         </button>
@@ -128,7 +132,7 @@
     private async Task HandleFileSelection(InputFileChangeEventArgs e)
     {
         _lecture = new Lecture();
-        _lecture.FileName = "LecturePDF.pdf";
+        _lecture.FileName = e.File.Name;
 
         _imageUrls?.Clear();
         IsConverting = true;

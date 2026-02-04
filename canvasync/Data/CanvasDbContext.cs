@@ -10,4 +10,5 @@ public class CanvasDbContext : DbContext
     }
 
     public DbSet<Lecture> Lectures { get; set; }
+    public DbSet<Member> Members {get;set;}
 }

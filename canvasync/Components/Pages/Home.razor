@@ -1,67 +1,46 @@
 ﻿@rendermode InteractiveServer
 @page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-@if(currentComponent is null)
-{
-    <div class="background-container">
-        <div class="top-box">
-            <div class="main-title">
-                CanvaSync
-            </div>
-        </div>
-        <div class="bottom-box">
-            <div class="button-container">
-                <button class="btn-opt" style="@hostBtnStyle" 
-                    @onclick='() => EnterPage("host")'
-                    @onmouseover="HostBtnOnMouseOver" 
-                    @onmouseout="HostBtnOnMouseOut">Host</button>
-
-                <button class="btn-opt"style="@guestBtnStyle" 
-                    @onclick='() => EnterPage("guest")'
-                    @onmouseover="GuestBtnOnMouseOver" 
-                    @onmouseout="GuestBtnOnMouseOut">Guest</button>
-            </div>
+<div class="background-container">
+    <div class="top-box" style="position: relative;">
+        <div class="main-title">
+            CanvaSync
         </div>
     </div>
-}
-else
-{
-    <CanvasLayout OnNotify="BackToHome">
-        @if(currentComponent is not null)
-        {
-            <DynamicComponent Type="currentComponent" />
-        }
-        else
-        {
-            <p>Loading Component..</p>
-        }
-    </CanvasLayout>
-}
+    <div class="bottom-box">
+        <div class="button-container">
+            <button class="btn-opt" style="@hostBtnStyle" 
+                @onclick='() => EnterPage("host")'
+                @onmouseover="HostBtnOnMouseOver" 
+                @onmouseout="HostBtnOnMouseOut">Host</button>
+
+            <button class="btn-opt"style="@guestBtnStyle" 
+                @onclick='() => EnterPage("guest")'
+                @onmouseover="GuestBtnOnMouseOver" 
+                @onmouseout="GuestBtnOnMouseOut">Guest</button>
+        </div>
+    </div>
+</div>
 
 @code
 {
-    private Type? currentComponent;
     private void EnterPage(string option)
     {
         switch (option)
         {
             case "host":
-                currentComponent = typeof(Host);
+                NavigationManager.NavigateTo("/host");
                 break;
             case "guest":
-                currentComponent = typeof(Guest);
+                NavigationManager.NavigateTo("/guest");
                 break;
             default:
-                //
                 break;
         }
     }
-
-    private void BackToHome()
-    {
-        currentComponent = null;
-    }
-
 
     // 버튼 관련
 

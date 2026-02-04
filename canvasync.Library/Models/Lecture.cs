@@ -9,6 +9,16 @@ public class Lecture
     public string Code { get; set; } = Random.Shared.Next(0, 1000000).ToString("D6");
     public string FileName { get; set; } = string.Empty;
     public byte[]? PdfFileBytes { get; set; }
+
+
+    [InverseProperty(nameof(Member.MyLectures))]
+    public Member HostMember { get; set; }
+
+
+    [InverseProperty(nameof(Member.JoinedLectures))]
+    public List<Member>? Members { get; set; }
+
+    
     [NotMapped]
     public List<Page> Pages { get; set; } = new();
 }

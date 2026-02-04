@@ -1,0 +1,136 @@
+@page "/login"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager NavigationManager
+
+<div class="background-container">
+    <div class="login-box">
+        <div class="login-header">
+            <button class="@(isLoginMode ? "active" : "")" @onclick="() => isLoginMode = true">Login</button>
+            <button class="@(!isLoginMode ? "active" : "")" @onclick="() => isLoginMode = false">Sign Up</button>
+        </div>
+        
+        <div class="login-body">
+            @if (isLoginMode)
+            {
+                <form action="Account/login" method="post">
+                    <h3 class="mb-4">Login</h3>
+                    <input type="text" name="username" placeholder="Username" required autocomplete="username" />
+                    <input type="password" name="password" placeholder="Password" required autocomplete="current-password" />
+                    <button type="submit" class="btn-submit mt-3">Login</button>
+                </form>
+            }
+            else
+            {
+                <form action="Account/register" method="post">
+                    <h3 class="mb-4">Sign Up</h3>
+                    <input type="text" name="username" placeholder="Username" required autocomplete="username" />
+                    <input type="password" name="password" placeholder="Password" required autocomplete="new-password" />
+                    <button type="submit" class="btn-submit mt-3">Sign Up</button>
+                </form>
+            }
+        </div>
+        
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="error-message">@ErrorMessage</div>
+        }
+    </div>
+</div>
+
+@code 
+{
+
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
+    private bool isLoginMode = true;
+
+    private string ErrorMessage => Error switch
+    {
+        "InvalidCredentials" => "Invalid username or password.",
+        "UsernameExists" => "Username already exists.",
+        _ => ""
+    };
+}
+
+<style>
+    .background-container {
+        width: 100vw;
+        height: 100vh;
+        background-color: #21241B;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+    .login-box {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 15px;
+        width: 400px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .login-header {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    .login-header button {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        font-weight: bold;
+        color: #aaa;
+        padding: 5px 10px;
+        transition: all 0.3s;
+    }
+    .login-header button.active {
+        color: #b6d029;
+        border-bottom: 3px solid #b6d029;
+    }
+    input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-sizing: border-box; 
+    }
+    input:focus {
+        border-color: #b6d029;
+        outline: none;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background-color: #b6d029;
+        color: #21241B;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .btn-submit:hover {
+        background-color: #a0b925;
+    }
+    .error-message {
+        color: #dc3545;
+        margin-top: 15px;
+        font-weight: bold;
+    }
+</style>

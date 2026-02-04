@@ -8,22 +8,21 @@
 @using System.Windows.Markup
 @using System.Drawing
 @rendermode InteractiveWebAssembly
-@page "/drawing/{memberType}/{lectureId}"
+@page "/drawing/{role}/{lectureId}"
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 
 <div class="page-layout">
-    <div class="top" style="background-color: #b6d029;">
-        <h3 @onclick="BackToHome" style="cursor: pointer">CanvaSync</h3>
-        <div style="display: flex; flex-direction: row; width: 20%; gap: 10px">
+    <div class="top" style="background-color: #b6d029; display: flex; justify-content: center; align-items: center; position: relative;">
+        <div style="display: flex; flex-direction: row; gap: 10px; height: 50px;">
             <div class="factor-rect-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Rect) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Rect)'></div>   
             <div class="factor-circle-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Circle) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Circle)'></div>   
             <div class="factor-line-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Line) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Line)'></div>   
             <div class="factor-text-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Text) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Text)'></div>   
             <div class="factor-pen-icon hover-btn" style="background-color: @((_isPen) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Pen)'></div>   
         </div>
-        <div class="button-group">
+        <div class="button-group" style="position: absolute; right: 20px;">
             <button class="btn-opt" style="background-color: #F87C63" @onclick="DeleteAll">Save</button>
             <button class="btn-opt" style="background-color: #44CFCF" @onclick="Print">Print</button>
         </div>
@@ -43,7 +42,7 @@
                 }
             </section>
             <section class="center">
-                <SKGLView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" IgnorePixelScaling="true" class="canvas-size" style=@($"border: 1px solid white;")  
+                <SKGLView OnPaintSurface="OnPaintSurface" EnableRenderLoop="true" IgnorePixelScaling="true" class="canvas-size"
                     @onmousedown="MouseDown"
                     @onmousemove="MouseMove"
                     @onmouseup="MouseUp"
@@ -131,7 +130,7 @@
 @code
 {
     [Parameter]
-    public string? memberType { get; set; }
+    public string? role { get; set; }
     [Parameter]
     public string? lectureId { get; set; }
     private HubConnection? _hubConnection;
@@ -173,7 +172,7 @@
             .WithUrl(Navigation.ToAbsoluteUri("/canvashub"))
             .Build();
 
-        Console.WriteLine($"memberType : {memberType}");
+        Console.WriteLine($"role : {role}");
 
         _hubConnection.On<string, FactorData>("ReceiveDrawings", (user, factorData) => 
         {   
@@ -308,22 +307,43 @@
         // PDF 이미지 띄우기
         if (_selectedPage is not null)
         {
-            var pageWidth = _selectedPage.Width;
-            var pageHeight = _selectedPage.Height;
+            var pageWidth = (float)_selectedPage.Width;
+            var pageHeight = (float)_selectedPage.Height;
 
-            // 이미지의 경계가 보이도록 0.99f 를 곱해줌
-            _ratio = pageWidth != 0 ? (_canvasWidth * 0.99f)/ (float)pageWidth : 1;
-            _startX = 5;
-            _startY = (_canvasHeight - (float)pageHeight * _ratio) / 2;
+            // 1. 이미지 비율과 캔버스 비율 계산
+            var canvasRatio = _canvasWidth / _canvasHeight;
+            var pageRatio = pageWidth / pageHeight;
+
+            // 2. 비율에 맞춰 스케일 계산 (Aspect Fit)
+            // 이미지가 캔버스보다 가로로 더 길다면(비율상), 가로 기준 맞춤 / 세로가 더 길다면 세로 기준 맞춤
+            // 0.9f를 곱해서 테두리(Padding) 여백 10% 확보 (상하좌우 합쳐서)
+            if (canvasRatio > pageRatio) 
+            {
+                // 캔버스가 더 넓적함 -> 이미지 높이를 캔버스 높이에 맞춤
+                _ratio = (_canvasHeight * 0.9f) / pageHeight;
+            }
+            else
+            {
+                // 이미지가 더 넓적함 -> 이미지 너비를 캔버스 너비에 맞춤
+                _ratio = (_canvasWidth * 0.9f) / pageWidth;
+            }
+
+            // 3. 중앙 정렬을 위한 시작 좌표 계산
+            var scaledWidth = pageWidth * _ratio;
+            var scaledHeight = pageHeight * _ratio;
+
+            _startX = (_canvasWidth - scaledWidth) / 2;
+            _startY = (_canvasHeight - scaledHeight) / 2;
+
             var rectPaint = new SKPaint {
                 IsAntialias = true,
                 Color = new SKColor(242, 42, 99),
                 Style = SKPaintStyle.Fill
             };
-
-            // 이미지의 경계가 보이도록 0이 아닌 5부터 시작
-            var rect = new SKRect(_startX, _startY, (float)pageWidth * _ratio, _startY + (float)pageHeight * _ratio);
-            canvas.DrawRect(rect, borderPaint);
+            
+            // 이미지 그리기
+            var rect = new SKRect(_startX, _startY, _startX + scaledWidth, _startY + scaledHeight);
+            canvas.DrawRect(rect, borderPaint); // 검은색 테두리
             canvas.DrawImage(_selectedPage.Image, rect);
 
             if (_selectedPage.Factors is not null || _selectedPage.HostFactors is not null)
@@ -377,7 +397,7 @@
             _factorPen = new FactorPen(penPaint);
             _selectedPage?.Factors.Add(_factorPen);
 
-            if (memberType == "host")
+            if (role == "host")
             {
                 var pageIndex = _pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
@@ -479,7 +499,7 @@
                 _penPoint = new SKPoint(mousePoint.X, mousePoint.Y);
             }
 
-            if (memberType == "host")
+            if (role == "host")
             {
                 if (_selectedPage is not null)
                 {
@@ -518,7 +538,7 @@
             _penPoint = new();
             if (_isPen)
             {
-                if (memberType == "host")
+                if (role == "host")
                 {
                     var pageIndex = _pages.IndexOf(_selectedPage);
                     var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
@@ -576,7 +596,7 @@
             factorText.TextChanged(e.Value?.ToString() ?? string.Empty);
 
 
-            if (memberType == "host")
+            if (role == "host")
             {
                 var pageIndex = _pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
@@ -593,7 +613,7 @@
             factorText.TextSizeChanged();
 
 
-            if (memberType == "host")
+            if (role == "host")
             {
                 var pageIndex = _pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
@@ -617,7 +637,7 @@
                 _selectedFactor.Paint.Color = SKColor.Parse(_selectedColor);
             }
 
-            if (memberType == "host")
+            if (role == "host")
             {
                 var pageIndex = _pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
@@ -702,7 +722,7 @@
             _selectedFactor.FactorType = type;
         }
 
-        if (memberType == "host")
+        if (role == "host")
         {
             if (_selectedFactor is not null)
             {
@@ -735,7 +755,7 @@
     {
         _selectedFactor.Paint.Style = _selectedFactor.Paint.Style == SKPaintStyle.Fill ? SKPaintStyle.Stroke : SKPaintStyle.Fill;
 
-        if (memberType == "host")
+        if (role == "host")
         {
             var pageIndex = _pages.IndexOf(_selectedPage);
             var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
@@ -745,7 +765,7 @@
     }
     private async Task DeleteFactor()
     {
-        if (memberType == "host")
+        if (role == "host")
         {
             var pageIndex = _pages.IndexOf(_selectedPage);
             var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
@@ -856,8 +876,8 @@
 }
 
 .top {
-    padding: 0.75rem 1rem;
-    border-block: 1px solid #e7e7ea;
+    /* padding: 0.75rem 1rem; */
+    /* border-block: 1px solid #e7e7ea; */
     display: flex;
     justify-content: space-between; /* 왼쪽 h3, 오른쪽 버튼 그룹 */
     align-items: center;
@@ -899,7 +919,11 @@
     background: #ffffff;
     border: 1px solid #e7e7ea;
     border-radius: 12px;
-    padding: 12px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .left {
@@ -921,20 +945,21 @@
     overflow: hidden; /* 내용이 넘치면 해당 칸만 스크롤 */
 }
 
-.center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+/* Removed duplicate .center definition */
 
 section.center > skcanvasview {
-    height: 100%;
+    /* height: 100%; removed to allow auto sizing */
     display: block;
 }
 
 .canvas-size {
+    /* Auto size with constraints */
     width: 100%;
     height: 100%;
+    /* max-width: 100%;
+    max-height: 100%; */
+    /* box-shadow: 0 4px 15px rgba(0,0,0,0.2); */
+    background-color: white;
 }
 
 .pdf-preview {
@@ -1187,6 +1212,9 @@ input:checked + .slider:before {
     justify-content: center; 
 
     align-items: flex-end;
+
+    /* 바닥에서 적당히 띄움 (화면 크기에 비례하도록 %) */
+    padding-bottom: 5%;
 
     /* .properties-panel의 flex-grow: 1 때문에 이 컨테이너는
        자동으로 .right 섹션의 맨 아래에 위치하게 됩니다. */

@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "ejZAJCNF1sg=",
+  "dgSpecHash": "tUgLxx+H2xE=",
   "success": true,
   "projectFilePath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
   "expectedPackageFiles": [
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.authorization/9.0.6/microsoft.aspnetcore.authorization.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.components/9.0.6/microsoft.aspnetcore.components.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.components.analyzers/9.0.6/microsoft.aspnetcore.components.analyzers.9.0.6.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.components.authorization/9.0.2/microsoft.aspnetcore.components.authorization.9.0.2.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.components.forms/9.0.6/microsoft.aspnetcore.components.forms.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.components.web/9.0.6/microsoft.aspnetcore.components.web.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.components.webassembly/9.0.6/microsoft.aspnetcore.components.webassembly.9.0.6.nupkg.sha512",

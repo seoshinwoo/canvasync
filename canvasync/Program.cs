@@ -4,6 +4,9 @@ using canvasync.Data;
 using Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using canvasync.Services;
+using canvasync.Library.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,9 +21,12 @@ builder.Services.AddControllers();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddSignalR();
+
+builder.Services.AddScoped<ICanvasService, CanvasDataService>();
 
 builder.Services.AddResponseCompression(opts =>
 {
@@ -28,17 +34,29 @@ builder.Services.AddResponseCompression(opts =>
        [ "application/octet-stream" ]);
 });
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<StateContainer>();
 
-builder.Services.AddDbContext<CanvasDbContext>(options => 
+builder.Services.AddDbContextFactory<CanvasDbContext>(options => 
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+       options.Cookie.Name = "auth_token";
+       options.LoginPath = "/login";
+       options.ExpireTimeSpan = TimeSpan.FromMinutes(60); 
+    });
+
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-app.UseResponseCompression();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseResponseCompression();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -52,19 +70,18 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-
+// app.UseHttpsRedirection();
 
 app.UseAntiforgery();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(canvasync.Client._Imports).Assembly);
-
-app.MapRazorComponents<App>()
-   .AddInteractiveServerRenderMode();
 
 app.MapControllers();
 

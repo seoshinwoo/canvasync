@@ -1,12 +1,17 @@
 @rendermode InteractiveServer
 @page "/host"
+@using Microsoft.EntityFrameworkCore
 @using PDFtoImage
 @using canvasync.Client.Pages
 @using Microsoft.AspNetCore.Components.WebAssembly.Hosting
+@using canvasync.Data
 @using canvasync.Library.Models
+@using canvasync.Library.Services
 @inject Containers.StateContainer StateContainer
 @inject NavigationManager NavigationManager
 @inject IWebHostEnvironment WebHostEnvironment
+@inject IDbContextFactory<CanvasDbContext> DbFactory
+@inject ICanvasService CanvasService
 
 <div class="dark-center-container">
     @if (!IsConverting)
@@ -62,71 +67,6 @@
     private void GenerateAddress()
     {
         // _address = 
-    }
-
-    private async Task TestFileSelect()
-    {
-        _lecture = new Lecture();
-        _lecture.FileName = "LecturePDF.pdf";
-
-        string filePath = "wwwroot/small_horiozntal_pdf_short.pdf"; 
-
-        // 2. MemoryStream을 생성합니다.
-        var memoryStream = new MemoryStream();
-
-        // 3. FileStream을 열어 MemoryStream으로 비동기 복사합니다.
-        using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        {
-            await fileStream.CopyToAsync(memoryStream);
-        }
-
-        // 4. (매우 중요) MemoryStream을 읽기 전에 포지션을 맨 앞으로 돌려놓습니다.
-        memoryStream.Position = 0;
-
-        _lecture.PdfFileBytes = memoryStream.ToArray();
-
-        try
-        {
-            var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
-
-            _imageUrls = new List<string>();
-            var count = 0;
-
-            foreach (var img in images)
-            {
-                var streamImage = new MemoryStream();
-                img.Encode(streamImage, SkiaSharp.SKEncodedImageFormat.Png, 80);
-
-                // Base64 문자열로 인코딩하여 Data URL 생성
-                var base64String = Convert.ToBase64String(streamImage.ToArray());
-                var dataUrl = $"data:image/png;base64, {base64String}";
-
-                // _imageUrls.Add(dataUrl);
-
-                var page = new Page();
-
-                page.PageIndex = count;
-                page.ImgData = dataUrl;
-                page.Width = img.Width;
-                page.Height = img.Height;
-
-                _lecture.Pages.Add(page);
-
-                count++;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"파일 변환 중 오류 발생 : {ex.Message}");
-        }
-        finally
-        {
-            // IsConverting = false;
-            IsConvertingDone = true;
-        }
-
-        StateContainer.Lectures.Add(_lecture);
-        StartPresentation();
     }
 
     private async Task HandleFileSelection(InputFileChangeEventArgs e)
@@ -218,6 +158,8 @@
 
     private void StartPresentation()
     {
+        CanvasService.AddLectureAsync(_lecture, "");
+
         //StateContainer.SetComponent(typeof(Drawing));
         NavigationManager.NavigateTo($"/drawing/host/{_lecture.Id}");
     }
@@ -266,8 +208,9 @@
     }
 
     .dark-center-container {
-        /* 1. 핵심: 화면 전체 높이를 기준으로 정렬하기 위해 'vh' 사용 */
-        min-height: 100vh;
+        /* 1. 핵심: 부모 요소(MainLayout의 main)가 flex 이므로, 남은 공간을 꽉 채우도록 설정 */
+        height: 100%;
+        width: 100%;
         
         /* 2. 핵심: 아이템(자식 요소) 간의 간격을 줌 */
         gap: 1.5rem; /* 약 24px */

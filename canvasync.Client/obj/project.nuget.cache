@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "tUgLxx+H2xE=",
+  "dgSpecHash": "h1sYUhUpOHU=",
   "success": true,
   "projectFilePath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
   "expectedPackageFiles": [
@@ -19,6 +19,7 @@
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.signalr.client.core/9.0.9/microsoft.aspnetcore.signalr.client.core.9.0.9.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.signalr.common/9.0.9/microsoft.aspnetcore.signalr.common.9.0.9.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.signalr.protocols.json/9.0.9/microsoft.aspnetcore.signalr.protocols.json.9.0.9.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.webutilities/9.0.0/microsoft.aspnetcore.webutilities.9.0.0.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.extensions.configuration/9.0.6/microsoft.extensions.configuration.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.extensions.configuration.abstractions/9.0.6/microsoft.extensions.configuration.abstractions.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.extensions.configuration.binder/9.0.6/microsoft.extensions.configuration.binder.9.0.6.nupkg.sha512",
@@ -36,6 +37,7 @@
     "/Users/seoshinwoo/.nuget/packages/microsoft.extensions.primitives/9.0.9/microsoft.extensions.primitives.9.0.9.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.jsinterop/9.0.6/microsoft.jsinterop.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.jsinterop.webassembly/9.0.6/microsoft.jsinterop.webassembly.9.0.6.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/microsoft.net.http.headers/9.0.0/microsoft.net.http.headers.9.0.0.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.net.illink.tasks/9.0.8/microsoft.net.illink.tasks.9.0.8.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.net.sdk.webassembly.pack/9.0.11/microsoft.net.sdk.webassembly.pack.9.0.11.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/pdfsharp/6.2.2/pdfsharp.6.2.2.nupkg.sha512",

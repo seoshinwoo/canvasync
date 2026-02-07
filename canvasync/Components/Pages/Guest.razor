@@ -10,16 +10,33 @@
     <button @onclick="Enter" class="pretty-button">Enter</button>
 </div>
 
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+
 @code
 {
     private string _lectureCode = string.Empty;
     private bool _isPresentationOpened = true;
-    private void Enter()
+    private async Task Enter()
     {
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        string? existingMemberId = null;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            existingMemberId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
         var lecture = StateContainer.Lectures.Where(lec => lec.Code == _lectureCode).FirstOrDefault();
         if (lecture.Pages.Count > 0)
         {
-            NavigationManager.NavigateTo($"/drawing/guest/{lecture.Id}");
+            var url = $"/drawing/guest/{lecture.Id}";
+            if (!string.IsNullOrEmpty(existingMemberId))
+            {
+                url += $"?memberId={existingMemberId}";
+            }
+            NavigationManager.NavigateTo(url);
         }
         else
         {

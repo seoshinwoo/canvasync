@@ -45,6 +45,9 @@
     }
 </div>
 
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+
 @code
 {
     private string _address = string.Empty;
@@ -156,12 +159,26 @@
         StateHasChanged();
     }
 
-    private void StartPresentation()
+    private async Task StartPresentation()
     {
-        CanvasService.AddLectureAsync(_lecture, "");
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        string memberId = ""; 
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            memberId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+        }
+
+        await CanvasService.AddLectureAsync(_lecture, memberId);
 
         //StateContainer.SetComponent(typeof(Drawing));
-        NavigationManager.NavigateTo($"/drawing/host/{_lecture.Id}");
+        var url = $"/drawing/host/{_lecture.Id}";
+        if (!string.IsNullOrEmpty(memberId))
+        {
+            url += $"?memberId={memberId}";
+        }
+        NavigationManager.NavigateTo(url);
     }
 }
 

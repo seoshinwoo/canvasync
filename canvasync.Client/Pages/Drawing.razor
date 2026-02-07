@@ -12,6 +12,7 @@
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@using Microsoft.AspNetCore.WebUtilities
 
 <div class="page-layout">
     <div class="top" style="background-color: #b6d029; display: flex; justify-content: center; align-items: center; position: relative;">
@@ -166,8 +167,17 @@
     private SKTypeface customTypeface;
     
     
+    private string _memberId = "";
+
     protected override async Task OnInitializedAsync()
     {
+        // 1. URL 쿼리 파라미터에서 memberId 추출
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("memberId", out var val))
+        {
+            _memberId = val;
+        }
+
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/canvashub"))
             .Build();

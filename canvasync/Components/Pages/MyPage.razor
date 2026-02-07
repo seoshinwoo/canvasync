@@ -2,9 +2,11 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
+@using canvasync.Library.Models
+@using canvasync.Library.Services
 @attribute [Authorize]
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICanvasService CanvasService
 
 <div class="background-container">
     <div class="content-box">
@@ -31,11 +33,80 @@
             </AuthorizeView>
         </div>
 
+        <div class="lists-section">
+            <div class="list-group">
+                <h4>My Lectures</h4>
+                <div class="scrollable-list">
+                    @if (MyLectures.Any())
+                    {
+                        @foreach (var lecture in MyLectures)
+                        {
+                            <div class="list-item">
+                                <span class="lecture-name">@lecture.FileName</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">No created lectures</div>
+                    }
+                </div>
+            </div>
+
+            <div class="list-group">
+                <h4>Joined Lectures</h4>
+                <div class="scrollable-list">
+                    @if (JoinedLectures.Any())
+                    {
+                        @foreach (var lecture in JoinedLectures)
+                        {
+                            <div class="list-item">
+                                <span class="lecture-name">@lecture.FileName</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">No taken lectures</div>
+                    }
+                </div>
+            </div>
+        </div>
+
         <div class="action-section">
             <button class="btn-logout" @onclick="Logout">Logout</button>
         </div>
     </div>
 </div>
+
+
+@code {
+    private List<Lecture> MyLectures { get; set; } = new();
+    private List<Lecture> JoinedLectures { get; set; } = new();
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateTask;
+        var user = authState.User;
+        string memberId = ""; 
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            memberId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+        }
+
+        MyLectures = await CanvasService.GetMyLecturesAsync(memberId);
+        JoinedLectures = await CanvasService.GetJoinedLecturesAsync(memberId);
+    }
+    private void GoToHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void Logout()
+    {
+        NavigationManager.NavigateTo("/Account/logout", forceLoad: true);
+    }
+}
 
 <style>
     .background-container {
@@ -52,7 +123,7 @@
 
     .content-box {
         background: white;
-        width: 400px;
+        width: 600px;
         border-radius: 15px;
         padding: 2rem;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -133,16 +204,66 @@
     .btn-logout:hover {
         background-color: #bb2d3b;
     }
+
+    .lists-section {
+        display: flex;
+        flex-direction: row;
+        gap: 1.5rem;
+        width: 100%;
+    }
+
+    .list-group {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .list-group h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+        color: #555;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .scrollable-list {
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 0.5rem;
+        background-color: #f9f9f9;
+        /* Custom scrollbar for webkit */
+        scrollbar-width: thin;
+        scrollbar-color: #ccc #f1f1f1;
+    }
+
+    .list-item {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9rem;
+    }
+
+    .list-item:last-child {
+        border-bottom: none;
+    }
+
+    .empty-state {
+        color: #999;
+        text-align: center;
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .scrollable-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    .scrollable-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    .scrollable-list::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 3px;
+    }
 </style>
-
-@code {
-    private void GoToHome()
-    {
-        NavigationManager.NavigateTo("/");
-    }
-
-    private void Logout()
-    {
-        NavigationManager.NavigateTo("/Account/logout", forceLoad: true);
-    }
-}

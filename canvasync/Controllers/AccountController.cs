@@ -27,6 +27,7 @@ public class AccountController : ControllerBase
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Role, "User")
             };
 

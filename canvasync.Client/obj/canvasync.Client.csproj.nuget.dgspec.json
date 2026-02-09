@@ -81,6 +81,10 @@
               "target": "Package",
               "version": "[6.2.2, )"
             },
+            "PDFtoImage": {
+              "target": "Package",
+              "version": "[5.1.1, )"
+            },
             "SkiaSharp": {
               "target": "Package",
               "version": "[3.119.0, )"

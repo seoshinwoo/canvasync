@@ -1,8 +1,12 @@
 @rendermode InteractiveServer
 @page "/guest"
 @using Microsoft.AspNetCore.Mvc
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using canvasync.Library.Services
 @inject Containers.StateContainer StateContainer
 @inject NavigationManager NavigationManager
+@inject ICanvasService CanvasService
 
 <div class="center-container">
     <label for="addressInput">Code :</label>
@@ -10,8 +14,6 @@
     <button @onclick="Enter" class="pretty-button">Enter</button>
 </div>
 
-@using Microsoft.AspNetCore.Components.Authorization
-@using System.Security.Claims
 
 @code
 {
@@ -21,20 +23,22 @@
     {
         var authState = await AuthenticationStateTask;
         var user = authState.User;
-        string? existingMemberId = null;
+        string? memberId = null;
 
         if (user.Identity?.IsAuthenticated == true)
         {
-            existingMemberId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            memberId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
         var lecture = StateContainer.Lectures.Where(lec => lec.Code == _lectureCode).FirstOrDefault();
         if (lecture.Pages.Count > 0)
         {
             var url = $"/drawing/guest/{lecture.Id}";
-            if (!string.IsNullOrEmpty(existingMemberId))
+            if (!string.IsNullOrEmpty(memberId))
             {
-                url += $"?memberId={existingMemberId}";
+                await CanvasService.JoinLectureAsync(lecture.Id, memberId);
+                
+                url += $"?memberId={memberId}";
             }
             NavigationManager.NavigateTo(url);
         }

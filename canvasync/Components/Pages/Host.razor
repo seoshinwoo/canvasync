@@ -111,7 +111,7 @@
 
             try
             {
-                var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
+                @* var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
 
                 _imageUrls = new List<string>();
                 var count = 0;
@@ -136,7 +136,7 @@
                     _lecture.Pages.Add(page);
 
                     count++;
-                }
+                } *@
             }
             catch (Exception ex)
             {
@@ -163,7 +163,7 @@
     {
         var authState = await AuthenticationStateTask;
         var user = authState.User;
-        string memberId = ""; 
+        string memberId = String.Empty; 
 
         if (user.Identity?.IsAuthenticated == true)
         {

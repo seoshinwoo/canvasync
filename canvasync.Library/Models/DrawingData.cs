@@ -12,5 +12,5 @@ public class DrawingData
     
     public string MemberId { get; set; }
     
-    public DrawingsDto Drawings { get; set; } = new();
+    public List<PageDto> Drawings { get; set; } = new();
 }

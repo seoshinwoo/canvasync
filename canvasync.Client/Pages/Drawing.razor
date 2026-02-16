@@ -7,12 +7,14 @@
 @using canvasync.Library.Models;
 @using System.Windows.Markup
 @using System.Drawing
+@using Microsoft.AspNetCore.WebUtilities
+@using canvasync.Library.Services
 @rendermode InteractiveWebAssembly
 @page "/drawing/{role}/{lectureId}"
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@using Microsoft.AspNetCore.WebUtilities
+@inject ICanvasService CanvasClientService
 
 <div class="page-layout">
     <div class="top" style="background-color: #b6d029; display: flex; justify-content: center; align-items: center; position: relative;">
@@ -24,7 +26,7 @@
             <div class="factor-pen-icon hover-btn" style="background-color: @((_isPen) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Pen)'></div>   
         </div>
         <div class="button-group" style="position: absolute; right: 20px;">
-            <button class="btn-opt" style="background-color: #F87C63" @onclick="DeleteAll">Save</button>
+            <button class="btn-opt" style="background-color: #F87C63" @onclick="Save">Save</button>
             <button class="btn-opt" style="background-color: #44CFCF" @onclick="Print">Print</button>
         </div>
     </div>
@@ -269,7 +271,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _pageLoadDone = true;
+        if (firstRender)
+        {
+            _pageLoadDone = true;
+            StateHasChanged();
+        }
     }
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
@@ -792,6 +798,18 @@
         {
             page.Factors = new();
         }
+    }
+
+    private async Task Save()
+    {
+        var drawings = PageDto.PagesToPageDtos(_pages, onlyFactors : true);
+
+        var drawingData = new DrawingData();
+        drawingData.LectureId = lectureId;
+        drawingData.MemberId = _memberId;
+        drawingData.Drawings = drawings;
+
+        await CanvasClientService.SaveDrawingDataAsync(drawingData);
     }
 
     private async Task Print()

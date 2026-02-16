@@ -46,4 +46,25 @@ public class LectureController : ControllerBase
         var lectures = await _canvasService.GetJoinedLecturesAsync(memberId);
         return Ok(lectures);
     }
+
+    [HttpPost("save-drawingdata")]
+    public async Task<IActionResult> SaveDrawingData([FromBody] DrawingData drawingData)
+    {
+        await _canvasService.SaveDrawingDataAsync(drawingData);
+        return Ok();
+    }
+
+    [HttpDelete("{lectureId}")]
+    public async Task<IActionResult> DeleteLecture(string lectureId)
+    {
+        await _canvasService.DeleteLectureAsync(lectureId);
+        return Ok();
+    }
+
+    [HttpPost("leave-lecture/{lectureId}")]
+    public async Task<IActionResult> LeaveLecture(string lectureId, [FromHeader(Name = "X-Member-Id")] string memberId)
+    {
+        await _canvasService.LeaveLectureAsync(lectureId, memberId);
+        return Ok();
+    }
 }

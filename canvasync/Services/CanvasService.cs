@@ -82,4 +82,46 @@ public class CanvasDataService : ICanvasService
 
         await context.SaveChangesAsync();
     }
+
+    public async Task SaveDrawingDataAsync(DrawingData drawingData)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        context.DrawingData.Add(drawingData);
+
+        await context.SaveChangesAsync();
+    }
+
+    public async Task DeleteLectureAsync(string lectureId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        var lecture = await context.Lectures.FindAsync(lectureId);
+        if (lecture != null)
+        {
+            context.Lectures.Remove(lecture);
+            await context.SaveChangesAsync();
+        }
+    }
+
+    public async Task LeaveLectureAsync(string lectureId, string memberId)
+    {
+        using var context = await _factory.CreateDbContextAsync();
+        var member = await context.Members
+            .Include(m => m.JoinedLectures)
+            .FirstOrDefaultAsync(m => m.Id == memberId);
+
+        if (member != null)
+        {
+            var lecture = member.JoinedLectures.FirstOrDefault(l => l.Id == lectureId);
+            if (lecture != null)
+            {
+                member.JoinedLectures.Remove(lecture);
+                await context.SaveChangesAsync();
+            }
+        }
+    }
+
+    public Task<Lecture?> GetLectureAsync(string lectureId)
+    {
+        throw new NotImplementedException();
+    }
 }

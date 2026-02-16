@@ -9,5 +9,7 @@ public interface ICanvasService
     Task<Lecture?> GetLectureAsync(string lectureId);
     Task<List<Lecture>> GetMyLecturesAsync(string memberId);
     Task<List<Lecture>> GetJoinedLecturesAsync(string memberId);
-
+    Task SaveDrawingDataAsync(DrawingData drawingData);
+    Task DeleteLectureAsync(string lectureId);
+    Task LeaveLectureAsync(string lectureId, string memberId);
 }

@@ -11,7 +11,7 @@ public class PageDto
     public int Height { get; set; } = 0;
     public List<FactorDto> FactorDtos { get; set; } = new();
 
-    public static List<PageDto> PagesToPageDtos(List<Page> pages)
+    public static List<PageDto> PagesToPageDtos(List<Page> pages, bool onlyFactors = false)
     {
         var pageDtos = new List<PageDto>();
 
@@ -19,10 +19,13 @@ public class PageDto
         {
             var pageDto = new PageDto();
 
-            pageDto.PageIndex = page.PageIndex;
-            pageDto.ImgData = page.ImgData;
-            pageDto.Width = page.Width;
-            pageDto.Height = page.Height;
+            if (!onlyFactors)
+            {
+                pageDto.PageIndex = page.PageIndex;
+                pageDto.ImgData = page.ImgData;
+                pageDto.Width = page.Width;
+                pageDto.Height = page.Height;
+            }
 
             foreach (var factor in page.HostFactors.Concat(page.Factors).ToList())
             {

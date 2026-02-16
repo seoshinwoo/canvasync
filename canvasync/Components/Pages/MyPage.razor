@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
+@using canvasync.Client.Services
 @using canvasync.Library.Models
 @using canvasync.Library.Services
 @attribute [Authorize]
@@ -43,6 +44,7 @@
                         {
                             <div class="list-item">
                                 <span class="lecture-name">@lecture.FileName</span>
+                                <button class="btn-delete" @onclick="() => DeleteLecture(lecture.Id)">x</button>
                             </div>
                         }
                     }
@@ -62,6 +64,7 @@
                         {
                             <div class="list-item">
                                 <span class="lecture-name">@lecture.FileName</span>
+                                <button class="btn-delete" @onclick="() => LeaveLecture(lecture.Id)">x</button>
                             </div>
                         }
                     }
@@ -83,19 +86,19 @@
 @code {
     private List<Lecture> MyLectures { get; set; } = new();
     private List<Lecture> JoinedLectures { get; set; } = new();
+    private string MemberId { get; set; } = string.Empty;
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateTask;
         var user = authState.User;
-        string memberId = ""; 
 
         if (user.Identity?.IsAuthenticated == true)
         {
-            memberId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+            MemberId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
         }
 
-        MyLectures = await CanvasService.GetMyLecturesAsync(memberId);
-        JoinedLectures = await CanvasService.GetJoinedLecturesAsync(memberId);
+        MyLectures = await CanvasService.GetMyLecturesAsync(MemberId);
+        JoinedLectures = await CanvasService.GetJoinedLecturesAsync(MemberId);
     }
     private void GoToHome()
     {
@@ -106,9 +109,34 @@
     {
         NavigationManager.NavigateTo("/Account/logout", forceLoad: true);
     }
+
+    private async Task DeleteLecture(string lectureId)
+    {
+        await CanvasService.DeleteLectureAsync(lectureId);
+        MyLectures.RemoveAll(l => l.Id == lectureId);
+    }
+
+    private async Task LeaveLecture(string lectureId)
+    {
+        await CanvasService.LeaveLectureAsync(lectureId, MemberId);
+        JoinedLectures.RemoveAll(l => l.Id == lectureId);
+    }
 }
 
 <style>
+    .btn-delete {
+        background: none;
+        border: none;
+        color: #ff4444;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 5px;
+        margin-left: auto;
+    }
+    .btn-delete:hover {
+        color: #ff0000;
+    }
+
     .background-container {
         width: 100vw;
         height: 100vh;

@@ -1,5 +1,6 @@
 
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace canvasync.Library.Models;
 
@@ -18,7 +19,7 @@ public class Lecture
     [InverseProperty(nameof(Member.JoinedLectures))]
     public List<Member>? Members { get; set; }
 
-    
+    [JsonIgnore]
     [NotMapped]
     public List<Page> Pages { get; set; } = new();
 }

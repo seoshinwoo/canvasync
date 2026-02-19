@@ -22,7 +22,7 @@ public class PageDto
             if (!onlyFactors)
             {
                 pageDto.PageIndex = page.PageIndex;
-                pageDto.ImgData = page.ImgData;
+                pageDto.ImgData = page.ImgUrl;
                 pageDto.Width = page.Width;
                 pageDto.Height = page.Height;
             }
@@ -48,7 +48,7 @@ public class PageDto
             var page = new Page();
 
             page.PageIndex = pageDto.PageIndex;
-            page.ImgData = pageDto.ImgData;
+            page.ImgUrl = pageDto.ImgData;
             page.Width = pageDto.Width;
             page.Height = pageDto.Height;
 

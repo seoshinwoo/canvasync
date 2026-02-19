@@ -57,9 +57,26 @@ public class CanvasClientService : ICanvasService
         return await response.Content.ReadFromJsonAsync<List<Lecture>>() ?? new List<Lecture>();
     }
 
-    public Task<Lecture?> GetLectureAsync(string lectureId)
+    public async Task<Lecture?> GetLectureAsync(string lectureId)
     {
-        throw new NotImplementedException();
+        return await _httpClient.GetFromJsonAsync<Lecture>($"api/lecture/get-lecture/{lectureId}");
+    }
+
+    public async Task<DrawingData?> GetDrawingDataAsync(string lectureId, string memberId)
+    {
+        try
+        {
+            var response = await _httpClient.GetFromJsonAsync<DrawingData>($"api/drawingdata/get-drawingdata/{lectureId}/{memberId}");
+            return response ?? new DrawingData();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+             return new DrawingData();
+        }
+        catch (System.Text.Json.JsonException) // In case of empty response or null
+        {
+             return new DrawingData();
+        }
     }
 
     public async Task DeleteLectureAsync(string lectureId)
@@ -84,5 +101,10 @@ public class CanvasClientService : ICanvasService
 
         var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
+    }
+
+    public Task<Lecture?> GetLectureByCodeAsync(string code)
+    {
+        throw new NotImplementedException();
     }
 }

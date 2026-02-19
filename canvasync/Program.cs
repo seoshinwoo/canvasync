@@ -4,6 +4,7 @@ using canvasync.Data;
 using Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using canvasync.Services;
 using canvasync.Library.Services;
@@ -37,8 +38,12 @@ builder.Services.AddResponseCompression(opts =>
 
 builder.Services.AddSingleton<StateContainer>();
 
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
+dataSourceBuilder.EnableDynamicJson();
+var dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContextFactory<CanvasDbContext>(options => 
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(dataSource));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -71,6 +76,8 @@ else
 }
 
 // app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseAntiforgery();
 

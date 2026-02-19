@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
 @using canvasync.Client.Services
 @using canvasync.Library.Models
 @using canvasync.Library.Services
@@ -42,9 +43,9 @@
                     {
                         @foreach (var lecture in MyLectures)
                         {
-                            <div class="list-item">
+                            <div class="list-item" @onclick="() => OpenLecture(lecture.Id, true)">
                                 <span class="lecture-name">@lecture.FileName</span>
-                                <button class="btn-delete" @onclick="() => DeleteLecture(lecture.Id)">x</button>
+                                <button class="btn-delete" @onclick="() => DeleteLecture(lecture.Id)" @onclick:stopPropagation="true">x</button>
                             </div>
                         }
                     }
@@ -62,9 +63,9 @@
                     {
                         @foreach (var lecture in JoinedLectures)
                         {
-                            <div class="list-item">
+                            <div class="list-item" @onclick="() => OpenLecture(lecture.Id, false)">
                                 <span class="lecture-name">@lecture.FileName</span>
-                                <button class="btn-delete" @onclick="() => LeaveLecture(lecture.Id)">x</button>
+                                <button class="btn-delete" @onclick="() => LeaveLecture(lecture.Id)" @onclick:stopPropagation="true">x</button>
                             </div>
                         }
                     }
@@ -108,6 +109,20 @@
     private void Logout()
     {
         NavigationManager.NavigateTo("/Account/logout", forceLoad: true);
+    }
+
+    private void OpenLecture(string lectureId, bool isMine)
+    {
+        if (isMine)
+        {
+            NavigationManager.NavigateTo($"/drawing/host/{lectureId}?memberId={MemberId}");
+            Console.WriteLine($"내 강의 접속!!");
+        }
+        else
+        {
+            NavigationManager.NavigateTo($"/drawing/guest/{lectureId}?memberId={MemberId}");
+            Console.WriteLine($"그냥 강의 접속!!");
+        }
     }
 
     private async Task DeleteLecture(string lectureId)
@@ -271,6 +286,11 @@
         padding: 8px;
         border-bottom: 1px solid #eee;
         font-size: 0.9rem;
+        cursor: pointer;
+        /* Ensure items are laid out correctly for clicking */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .list-item:last-child {

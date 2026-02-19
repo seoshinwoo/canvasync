@@ -9,7 +9,8 @@
 @using System.Drawing
 @using Microsoft.AspNetCore.WebUtilities
 @using canvasync.Library.Services
-@rendermode InteractiveWebAssembly
+@using Microsoft.AspNetCore.Components.Web
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @page "/drawing/{role}/{lectureId}"
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
@@ -35,11 +36,11 @@
         @if (_pageLoadDone)
         {
             <section class="left" style="padding: 0;">
-                @foreach (var page in _pages)
+                @foreach (var page in _lecture.Pages)
                 {
                     <div class="pdf-preview" style="background-color: @(_selectedPage == page ? "#b6d029" : "");" @onclick="() => SelectPage(page)">
                         <div style="width: 100%; padding: 2px; text-align: center;">
-                            <img src="@(page.ImgData)" loading="lazy" style="width: 80%;" />
+                            <img src="@(page.ImgUrl)" loading="lazy" style="width: 80%;" />
                         </div>
                     </div>
                 }
@@ -136,9 +137,10 @@
     public string? role { get; set; }
     [Parameter]
     public string? lectureId { get; set; }
+    private Lecture? _lecture { get; set; }
     private HubConnection? _hubConnection;
     private List<string> _imgUrls = new();
-    private List<Page> _pages = new();
+    private List<Page> _pages= new();
     private List<Page> _hostPages = new();
     private Page? _selectedPage;
     private record ImgSize(int width, int height);
@@ -167,8 +169,6 @@
     private float _ratio;
     private bool _isPen = false;
     private SKTypeface customTypeface;
-    
-    
     private string _memberId = "";
 
     protected override async Task OnInitializedAsync()
@@ -180,14 +180,23 @@
             _memberId = val;
         }
 
+        var hubUri = $"/canvashub";
+
+        if (role == "host")
+        {
+            hubUri += $"?lectureId={lectureId}&memberId={_memberId}";
+        }
+
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/canvashub"))
+            .WithUrl(Navigation.ToAbsoluteUri(hubUri))
             .Build();
 
         Console.WriteLine($"role : {role}");
 
         _hubConnection.On<string, FactorData>("ReceiveDrawings", (user, factorData) => 
         {   
+            Console.WriteLine($"Guest가 Host로부터 {factorData.FactorDto.FactorType} 받음");
+            Console.WriteLine($"{factorData.FactorAction} 실행!!");
             var factor = FactorDto.FactorDtoToFactor(factorData.FactorDto);
             if (factor.FactorType is FactorType.Pen)
             {
@@ -197,55 +206,145 @@
             switch (factorData.FactorAction)
             {
                 case "Add":
-                    _pages[factorData.PageIndex].HostFactors.Add(factor);
+                    _lecture.Pages[factorData.PageIndex].HostFactors.Add(factor);
+                    Console.WriteLine($"_lecture.Pages[factorData.PageIndex].HostFactors의 개수 : {_lecture.Pages[factorData.PageIndex].HostFactors.Count()}");
                     break;
                 case "Delete":
-                    _pages[factorData.PageIndex].HostFactors.RemoveAt(factorData.FactorIndex);
+                    _lecture.Pages[factorData.PageIndex].HostFactors.RemoveAt(factorData.FactorIndex);
                     break;
                 case "Update": 
-                    _pages[factorData.PageIndex].HostFactors[factorData.FactorIndex] = factor;
+                    _lecture.Pages[factorData.PageIndex].HostFactors[factorData.FactorIndex] = factor;
                     break;
             }
 
             InvokeAsync(StateHasChanged);
         });
         
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadLectureDataAsync();
+        }
+    }
+
+    private async Task LoadLectureDataAsync()
+    {
+        try
+        {
+            // Bytes 데이터를 가져와서 List<Page> 로 변환..
+            _lecture = await CanvasClientService.GetLectureAsync(lectureId);
+
+            if (_lecture == null)
+            {
+                Console.WriteLine($"_lecture에 아무것도 안들어왔는데??");
+                return;
+            }
+            else
+            {
+                Console.WriteLine($"lecture 들어왔음..");
+            }
+
+            // UI 렌더링 기회를 주기 위해 잠시 대기
+            await Task.Delay(1);
+
+            var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
+            var count = 0;
+            foreach (var image in images)
+            {
+                var streamImage = new MemoryStream();
+                image.Encode(streamImage, SkiaSharp.SKEncodedImageFormat.Png, 100);
+
+                var base64String = Convert.ToBase64String(streamImage.ToArray());
+                var dataUrl = $"data:image/png;base64, {base64String}";
+
+                var page = new Page();
+                page.PageIndex = count;
+                page.ImgUrl = dataUrl;
+                page.Image = LoadImageFromBase64(page.ImgUrl);
+                page.Width = image.Width;
+                page.Height = image.Height;
+
+                _lecture.Pages.Add(page);
+                count++;
+                
+                // 긴 루프 중간에 UI 업데이트를 위해 양보
+                if (count % 3 == 0) 
+                {
+                    StateHasChanged();
+                    await Task.Delay(1);
+                }
+            }
+
+            var myDrawingDtos = new List<List<FactorDto>>();
+            var hostDrawingDtos = new List<List<FactorDto>>();
+
+            // 내가 lecture 생성자가 아니라면 해당 lecture 에 대한 나의 드로잉을 가져옴
+            if (role == "guest")
+            {
+                if (_lecture.HostMember != null)
+                {
+                    var hostDrawingData = await CanvasClientService.GetDrawingDataAsync(lectureId, _lecture.HostMember.Id);
+                    if (hostDrawingData?.Drawings != null)
+                    {
+                        hostDrawingDtos = hostDrawingData.Drawings;
+                        if (hostDrawingDtos.Count > 0)
+                        {
+                            Console.WriteLine($"그래서 가져온 첫 페이지 factor 개수 : {hostDrawingDtos[0].Count()}");
+                        }
+                    }
+                }
+            }
+            
+            var myDrawingData = await CanvasClientService.GetDrawingDataAsync(lectureId, _memberId); 
+            if (myDrawingData?.Drawings != null)
+            {
+                myDrawingDtos = myDrawingData.Drawings;
+            }
+
+            var drawingPageCount = 0;
+            foreach (var page in _lecture.Pages)
+            {
+                if (page.HostFactors.Count == 0)
+                {
+                    page.HostFactors = new List<Factor>();
+                }
+
+                if (hostDrawingDtos.Count > drawingPageCount && hostDrawingDtos[drawingPageCount] != null)
+                {
+                    foreach (var factorDto in hostDrawingDtos[drawingPageCount])
+                    {
+                        page.HostFactors.Add(FactorDto.FactorDtoToFactor(factorDto));
+                    }
+                }
+
+                if (myDrawingDtos.Count > drawingPageCount && myDrawingDtos[drawingPageCount] != null)
+                {
+                    foreach (var factorDto in myDrawingDtos[drawingPageCount])
+                    {
+                        page.Factors.Add(FactorDto.FactorDtoToFactor(factorDto));
+                    }
+                }
+
+                drawingPageCount++;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
+        }
 
         try
         {
             await _hubConnection.StartAsync();
-
             Console.WriteLine($"Hub 연결 성공");
         }
         catch
         {
             Console.WriteLine("hubConnection 시작 실패");
-        }
-
-        try
-        {
-            // var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>($"http://localhost:5175/api/pdfimages/{lectureId}") ?? new List<PageDto>();
-            var pageDtos = await HttpClient.GetFromJsonAsync<List<PageDto>>(Navigation.ToAbsoluteUri($"/api/pdfimages/{lectureId}")) ?? new List<PageDto>();
-            
-            var hostPages = PageDto.PageDtosToPages(pageDtos);
-            foreach (var hostPage in hostPages)
-            {
-                var page = new Page();
-
-                page.PageIndex = hostPage.PageIndex;
-                page.ImgData = hostPage.ImgData;
-                page.Image = LoadImageFromBase64(page.ImgData);
-                page.HostFactors = hostPage.Factors;
-                Console.WriteLine($"HostFactors 개수 : {page.HostFactors.Count()}");
-                page.Width = hostPage.Width;
-                page.Height = hostPage.Height;
-
-                _pages.Add(page);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"API 호출 중 오류 발생 : {ex.Message}");
         }
 
         try
@@ -258,24 +357,20 @@
         {
             Console.WriteLine($"폰트 로딩 실패 : {ex.Message}");
         }
+
+        Console.WriteLine($"_lecture.Pages.Count() : {_lecture.Pages.Count()}");
         
-        if (_pages.Count() > 0)
+        if (_lecture.Pages.Count() > 0)
         {
-            _selectedPage = _pages[0];
+            _selectedPage = _lecture.Pages[0];
         }
         else
         {
-            Console.WriteLine($"_pages Not Loaded");
+            Console.WriteLine($"_lecture.Pages Not Loaded");
         }
-    }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _pageLoadDone = true;
-            StateHasChanged();
-        }
+        _pageLoadDone = true;
+        StateHasChanged();
     }
 
     private void OnPaintSurface(SKPaintGLSurfaceEventArgs e)
@@ -415,7 +510,7 @@
 
             if (role == "host")
             {
-                var pageIndex = _pages.IndexOf(_selectedPage);
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
 
                 await Send(pageIndex, factorIndex, "Add", _factorPen);
@@ -521,14 +616,14 @@
                 {
                     if (_isPen)
                     {
-                        var pageIndex = _pages.IndexOf(_selectedPage);
+                        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                         var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
 
                         await Send(pageIndex, factorIndex, "Update", _factorPen);
                     }
                     else if (_selectedFactor is not null)
                     {
-                        var pageIndex = _pages.IndexOf(_selectedPage);
+                        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                         var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
                         await Send(pageIndex, factorIndex, "Update", _selectedFactor);
@@ -556,7 +651,7 @@
             {
                 if (role == "host")
                 {
-                    var pageIndex = _pages.IndexOf(_selectedPage);
+                    var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                     var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
 
                     await Send(pageIndex, factorIndex, "Update", _factorPen);
@@ -594,7 +689,7 @@
 
     private void SelectPage(Page page)
     {
-        _imgSrc = page.ImgData;
+        _imgSrc = page.ImgUrl;
         _selectedPage = page;
         _selectedFactor = null;
         _isPen = false;
@@ -614,7 +709,7 @@
 
             if (role == "host")
             {
-                var pageIndex = _pages.IndexOf(_selectedPage);
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
                 await Send(pageIndex, factorIndex, "Update", _selectedFactor);
@@ -631,7 +726,7 @@
 
             if (role == "host")
             {
-                var pageIndex = _pages.IndexOf(_selectedPage);
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
                 await Send(pageIndex, factorIndex, "Update", _selectedFactor);
@@ -655,7 +750,7 @@
 
             if (role == "host")
             {
-                var pageIndex = _pages.IndexOf(_selectedPage);
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
                 await Send(pageIndex, factorIndex, "Update", _selectedFactor);
@@ -742,7 +837,7 @@
         {
             if (_selectedFactor is not null)
             {
-                var pageIndex = _pages.IndexOf(_selectedPage);
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
                 await Send(pageIndex, factorIndex, "Add", _selectedFactor);
@@ -752,7 +847,7 @@
 
     private async Task Send(int pageIndex, int factorIndex, string factorAction, Factor factor)
     {
-        if (_hubConnection is not null)
+        if (_hubConnection is not null && _hubConnection.State == HubConnectionState.Connected)
         {
             if (_selectedFactor is not null || _isPen)
             {
@@ -773,7 +868,7 @@
 
         if (role == "host")
         {
-            var pageIndex = _pages.IndexOf(_selectedPage);
+            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
             var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
             await Send(pageIndex, factorIndex, "Update", _selectedFactor);
@@ -783,7 +878,7 @@
     {
         if (role == "host")
         {
-            var pageIndex = _pages.IndexOf(_selectedPage);
+            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
             var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
             await Send(pageIndex, factorIndex, "Delete", _selectedFactor);
@@ -794,7 +889,7 @@
     }
     private void DeleteAll()
     {
-        foreach (var page in _pages)
+        foreach (var page in _lecture.Pages)
         {
             page.Factors = new();
         }
@@ -802,20 +897,32 @@
 
     private async Task Save()
     {
-        var drawings = PageDto.PagesToPageDtos(_pages, onlyFactors : true);
+        // var drawings = PageDto.PagesToPageDtos(_lecture.Pages, onlyFactors : true);
 
         var drawingData = new DrawingData();
         drawingData.LectureId = lectureId;
         drawingData.MemberId = _memberId;
+
+        var drawings = new List<List<FactorDto>>();
+        foreach (var page in _lecture.Pages)
+        {
+            var factorDtos = new List<FactorDto>();
+            foreach (var factor in page.Factors) 
+            {
+                factorDtos.Add(FactorDto.FactorToFactorDto(factor));
+            }
+            drawings.Add(factorDtos);
+        }
         drawingData.Drawings = drawings;
 
+        //drawingData.Drawings = drawings;
         await CanvasClientService.SaveDrawingDataAsync(drawingData);
     }
 
     private async Task Print()
     {
         var drawingsDto = new DrawingsDto();
-        drawingsDto.PageDtos = PageDto.PagesToPageDtos(_pages);
+        drawingsDto.PageDtos = PageDto.PagesToPageDtos(_lecture.Pages);
 
         try
         {

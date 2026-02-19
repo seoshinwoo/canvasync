@@ -14,10 +14,17 @@
     <button @onclick="Enter" class="pretty-button">Enter</button>
 </div>
 
+@if (_showToast)
+{
+    <div class="toast-notification">@_toastMessage</div>
+}
+
 
 @code
 {
     private string _lectureCode = string.Empty;
+    private bool _showToast = false;
+    private string _toastMessage = "";
     private bool _isPresentationOpened = true;
     private async Task Enter()
     {
@@ -30,22 +37,34 @@
             memberId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
-        var lecture = StateContainer.Lectures.Where(lec => lec.Code == _lectureCode).FirstOrDefault();
-        if (lecture.Pages.Count > 0)
+        // var lecture = StateContainer.Lectures.Where(lec => lec.Code == _lectureCode).FirstOrDefault();
+
+        var lecture = await CanvasService.GetLectureByCodeAsync(_lectureCode);
+
+        if (lecture is null)
         {
-            var url = $"/drawing/guest/{lecture.Id}";
-            if (!string.IsNullOrEmpty(memberId))
-            {
-                await CanvasService.JoinLectureAsync(lecture.Id, memberId);
-                
-                url += $"?memberId={memberId}";
-            }
-            NavigationManager.NavigateTo(url);
+            await ShowToast("코드에 해당하는 강의 없음");
+            return;
         }
-        else
+
+        var url = $"/drawing/guest/{lecture.Id}";
+        if (!string.IsNullOrEmpty(memberId))
         {
-            _isPresentationOpened = false;
+            await CanvasService.JoinLectureAsync(lecture.Id, memberId);
+            
+            url += $"?memberId={memberId}";
         }
+        NavigationManager.NavigateTo(url);
+    }
+
+    private async Task ShowToast(string message)
+    {
+        _toastMessage = message;
+        _showToast = true;
+        StateHasChanged();
+        await Task.Delay(3000);
+        _showToast = false;
+        StateHasChanged();
     }
 }
 
@@ -85,5 +104,18 @@
     .center-container label {
         font-weight: bold;
         font-size: 1.1rem;
+    }
+
+    .toast-notification {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 1000;
+        opacity: 0.9;
     }
 </style>

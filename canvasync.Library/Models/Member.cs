@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -15,10 +16,12 @@ public class Member
     public string Password { get; set; } = string.Empty;
 
 
+    [JsonIgnore]
     [InverseProperty(nameof(Lecture.HostMember))]
     public List<Lecture>? MyLectures { get; set; } = new();
 
 
+    [JsonIgnore]
     [InverseProperty(nameof(Lecture.Members))]
     public List<Lecture>? JoinedLectures { get; set; } = new();
 }

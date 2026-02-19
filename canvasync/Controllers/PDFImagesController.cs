@@ -2,6 +2,7 @@ using System.Text.Json;
 using canvasync.Containers;
 using canvasync.Library.Dtos;
 using canvasync.Library.Models;
+using canvasync.Library.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.JSInterop;
 
@@ -41,10 +42,12 @@ public class PagesController : ControllerBase
 [Route("api/[controller]")]
 public class PDFDownloadController : ControllerBase
 {
+    private readonly ICanvasService _canvasService;
     private readonly StateContainer _stateContainer;
-    public PDFDownloadController(StateContainer stateContainer)
+    public PDFDownloadController(StateContainer stateContainer, ICanvasService canvasService)
     {
         _stateContainer = stateContainer;
+        _canvasService = canvasService;
     }
 
     [HttpPost("make-pdf/{lectureId}")]
@@ -52,7 +55,7 @@ public class PDFDownloadController : ControllerBase
     {
         var maxFileSize = 500 * 1024 * 1024;
         var form = await Request.ReadFormAsync();
-        var lecture = _stateContainer.Lectures.Where(lec => lec.Id == lectureId).FirstOrDefault(); 
+        var lecture = await _canvasService.GetLectureAsync(lectureId);
 
         var pdfFile = lecture.PdfFileBytes;
         if (pdfFile == null || pdfFile.Count() == 0)

@@ -930,7 +930,7 @@
             var drawingsDtoJson = JsonSerializer.Serialize(drawingsDto);
             content.Add(new StringContent(drawingsDtoJson), "drawings");
             // var response = await HttpClient.PostAsync($"http://localhost:5175/api/pdfdownload/make-pdf/{lectureId}", content);
-            var response = await HttpClient.PostAsync(Navigation.ToAbsoluteUri($"api/pdfdownload/make-pdf/{lectureId}"), content);
+            var response = await HttpClient.PostAsync(Navigation.ToAbsoluteUri($"api/pdfdownload/make-pdf/{lectureId}/{_memberId}"), content);
 
             if (response.IsSuccessStatusCode)
             {

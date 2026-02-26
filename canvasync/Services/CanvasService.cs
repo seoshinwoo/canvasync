@@ -179,4 +179,11 @@ public class CanvasDataService : ICanvasService
 
         return lecture;
     }
+
+    public async Task<Member> GetMemberAsync(string memberId)
+    {
+        using  var context = await _factory.CreateDbContextAsync();
+
+        return await context.Members.Where(member => member.Id == memberId).FirstOrDefaultAsync();
+    }
 }

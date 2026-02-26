@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.Marshalling;
 using System.Text.Json;
 using canvasync.Containers;
 using canvasync.Library.Dtos;
@@ -50,12 +51,13 @@ public class PDFDownloadController : ControllerBase
         _canvasService = canvasService;
     }
 
-    [HttpPost("make-pdf/{lectureId}")]
-    public async Task<IActionResult> MakePDF(string lectureId)
+    [HttpPost("make-pdf/{lectureId}/{memberId}")]
+    public async Task<IActionResult> MakePDF(string lectureId, string memberId)
     {
         var maxFileSize = 500 * 1024 * 1024;
         var form = await Request.ReadFormAsync();
         var lecture = await _canvasService.GetLectureAsync(lectureId);
+        var member = await _canvasService.GetMemberAsync(memberId);
 
         var pdfFile = lecture.PdfFileBytes;
         if (pdfFile == null || pdfFile.Count() == 0)
@@ -82,7 +84,9 @@ public class PDFDownloadController : ControllerBase
         if (lecture.PdfFileBytes is not null)
         {
             var result = _stateContainer.MergePdfs(lecture.PdfFileBytes, overlayPdf);
-            return File(result, "application/pdf", "downloadedFileName.pdf");
+            var fileName = $"{lecture.FileName}_{member.Name}";
+
+            return File(result, "application/pdf", fileName);
         }
         else
         {

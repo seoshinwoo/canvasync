@@ -107,4 +107,9 @@ public class CanvasClientService : ICanvasService
     {
         throw new NotImplementedException();
     }
+
+    public Task<Member> GetMemberAsync(string memberId)
+    {
+        throw new NotImplementedException();
+    }
 }

@@ -14,4 +14,5 @@ public interface ICanvasService
     Task SaveDrawingDataAsync(DrawingData drawingData);
     Task DeleteLectureAsync(string lectureId);
     Task LeaveLectureAsync(string lectureId, string memberId);
+    Task<Member> GetMemberAsync(string memberId);
 }

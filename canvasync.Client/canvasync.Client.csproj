@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="9.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.0" />
     <PackageReference Include="PDFsharp" Version="6.2.2" />
     <PackageReference Include="PDFtoImage" Version="5.1.1" />

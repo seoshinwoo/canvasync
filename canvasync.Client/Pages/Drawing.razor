@@ -189,6 +189,7 @@
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri(hubUri))
+            .AddMessagePackProtocol()
             .Build();
 
         Console.WriteLine($"role : {role}");

@@ -4,20 +4,22 @@ using canvasync.Library.Dtos;
 using canvasync.Containers;
 using System.Collections.Concurrent;
 using canvasync.Library.Services;
+using canvasync.Services;
 
 namespace Hubs;
 
 public class CanvasHub : Hub
 {
-    // ()
     private static ConcurrentDictionary<string, string> ConnectedLectures = new();
     private readonly StateContainer _stateContainer;
     private readonly ICanvasService _canvasService;
+    private readonly IDrawingStorageService _drawingStorage;
 
-    public CanvasHub(StateContainer stateContainer, ICanvasService canvasService)
+    public CanvasHub(StateContainer stateContainer, ICanvasService canvasService, IDrawingStorageService drawingStorage)
     {
         _stateContainer = stateContainer;
         _canvasService = canvasService;
+        _drawingStorage = drawingStorage;
     }
 
     public override async Task OnConnectedAsync()
@@ -33,17 +35,17 @@ public class CanvasHub : Hub
         {
             ConnectedLectures.TryAdd(connectionId, lectureId);
 
-            if (!_stateContainer.DrawingStorage.ContainsKey(lectureId))
+            if (!await _drawingStorage.ContainsKeyAsync(lectureId))
             {
                 var drawingData = await _canvasService.GetDrawingDataAsync(lectureId, memberId);
 
                 if (drawingData != null)
                 {
-                    _stateContainer.DrawingStorage.Add(lectureId, drawingData.Drawings);
+                    await _drawingStorage.SetAsync(lectureId, drawingData.Drawings);
                 }
                 else
                 {
-                    _stateContainer.DrawingStorage.Add(lectureId, new List<List<FactorDto>>());
+                    await _drawingStorage.SetAsync(lectureId, new List<List<FactorDto>>());
                 }
             }
         }
@@ -55,9 +57,9 @@ public class CanvasHub : Hub
 
         if (ConnectedLectures.TryRemove(connectionId, out string removedLectureId))
         {
-            if (_stateContainer.DrawingStorage.ContainsKey(removedLectureId))
+            if (await _drawingStorage.ContainsKeyAsync(removedLectureId))
             {
-                _stateContainer.DrawingStorage.Remove(removedLectureId);
+                await _drawingStorage.RemoveAsync(removedLectureId);
             }
         }
     }
@@ -67,7 +69,7 @@ public class CanvasHub : Hub
         Console.WriteLine($"Host가 Guest에게 {factorData.FactorDto.FactorType}을 방송");
         await Clients.Others.SendAsync("ReceiveDrawings", user, factorData);
 
-        var pages = _stateContainer.DrawingStorage[factorData.LectureId];
+        var pages = await _drawingStorage.GetAsync(factorData.LectureId);
 
         if (pages is not null)
         {
@@ -88,23 +90,8 @@ public class CanvasHub : Hub
                     pages[factorData.PageIndex][factorData.FactorIndex] = factorData.FactorDto;
                     break;
             }
+
+            await _drawingStorage.SetAsync(factorData.LectureId, pages);
         }
-
-        // var lecture = _stateContainer.Lectures.Where(lec => lec.Id == factorData.LectureId).Select(lec => lec).FirstOrDefault();
-
-        // var factor = FactorDto.FactorDtoToFactor(factorData.FactorDto);
-
-        // switch (factorData.FactorAction)
-        // {
-        //     case "Add":
-        //         lecture.Pages[factorData.PageIndex].Factors.Add(factor);
-        //         break;
-        //     case "Delete":
-        //         lecture.Pages[factorData.PageIndex].Factors.RemoveAt(factorData.FactorIndex);
-        //         break;
-        //     case "Update":
-        //         lecture.Pages[factorData.PageIndex].Factors[factorData.FactorIndex] = factor;
-        //         break;
-        // }
     }
 }

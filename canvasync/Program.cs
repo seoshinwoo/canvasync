@@ -25,7 +25,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddMessagePackProtocol();
 
 builder.Services.AddScoped<ICanvasService, CanvasDataService>();
 
@@ -37,6 +38,13 @@ builder.Services.AddResponseCompression(opts =>
 
 
 builder.Services.AddSingleton<StateContainer>();
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "canvasync:";
+});
+builder.Services.AddSingleton<IDrawingStorageService, RedisDrawingStorageService>();
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();

@@ -14,7 +14,6 @@ namespace canvasync.Containers;
 public class StateContainer
 {
     public List<Lecture> Lectures { get; set; } = new();
-    public Dictionary<string, List<List<FactorDto>>> DrawingStorage { get; set; } = new();
 
     public byte[] CreateOverlayPdf(DrawingsDto drawingsDto)
     {

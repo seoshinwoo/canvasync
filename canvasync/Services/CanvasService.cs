@@ -9,12 +9,12 @@ namespace canvasync.Services;
 public class CanvasDataService : ICanvasService
 {
     private readonly IDbContextFactory<CanvasDbContext> _factory;
-    private readonly StateContainer _stateContainer;
+    private readonly IDrawingStorageService _drawingStorage;
 
-    public CanvasDataService(IDbContextFactory<CanvasDbContext> factory, StateContainer stateContainer)
+    public CanvasDataService(IDbContextFactory<CanvasDbContext> factory, IDrawingStorageService drawingStorage)
     {
         _factory = factory;
-        _stateContainer = stateContainer;
+        _drawingStorage = drawingStorage;
     }
 
     // Lecture 추가
@@ -148,13 +148,14 @@ public class CanvasDataService : ICanvasService
 
     public async Task<DrawingData?> GetDrawingDataAsync(string lectureId, string memberId)
     {
-        if (_stateContainer.DrawingStorage.ContainsKey(lectureId))
+        var cachedDrawings = await _drawingStorage.GetAsync(lectureId);
+        if (cachedDrawings is not null)
         {
-            Console.WriteLine($"메모리에서 가져옴!!");
+            Console.WriteLine($"Redis에서 가져옴!!");
             var drawingData = new DrawingData();
             drawingData.LectureId = lectureId;
             drawingData.MemberId = memberId;
-            drawingData.Drawings = _stateContainer.DrawingStorage[lectureId];
+            drawingData.Drawings = cachedDrawings;
 
             return drawingData;
         }

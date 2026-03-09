@@ -6,12 +6,12 @@ using canvasync.Containers;
 
 namespace canvasync.Services;
 
-public class CanvasDataService : ICanvasService
+public class CanvasService : ICanvasService
 {
     private readonly IDbContextFactory<CanvasDbContext> _factory;
     private readonly IDrawingStorageService _drawingStorage;
 
-    public CanvasDataService(IDbContextFactory<CanvasDbContext> factory, IDrawingStorageService drawingStorage)
+    public CanvasService(IDbContextFactory<CanvasDbContext> factory, IDrawingStorageService drawingStorage)
     {
         _factory = factory;
         _drawingStorage = drawingStorage;

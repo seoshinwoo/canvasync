@@ -28,7 +28,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSignalR()
     .AddMessagePackProtocol();
 
-builder.Services.AddScoped<ICanvasService, CanvasDataService>();
+builder.Services.AddScoped<ICanvasService, CanvasService>();
 
 builder.Services.AddResponseCompression(opts =>
 {

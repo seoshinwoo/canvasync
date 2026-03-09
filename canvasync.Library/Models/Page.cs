@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using SkiaSharp;
 
 namespace canvasync.Library.Models;
@@ -11,4 +12,7 @@ public class Page
     public List<Factor> HostFactors { get; set; } = new();
     public int Width { get; set; } = 0;
     public int Height { get; set; } = 0;
+
+    [NotMapped]
+    public string ThumbnailBase64 { get; set; } = string.Empty;
 }

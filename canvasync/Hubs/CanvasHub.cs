@@ -87,6 +87,7 @@ public class CanvasHub : Hub
                     pages[factorData.PageIndex].RemoveAt(factorData.FactorIndex);
                     break;
                 case "Update":
+                case "End":
                     pages[factorData.PageIndex][factorData.FactorIndex] = factorData.FactorDto;
                     break;
             }

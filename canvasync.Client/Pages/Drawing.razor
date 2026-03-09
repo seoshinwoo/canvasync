@@ -18,7 +18,7 @@
 @inject ICanvasService CanvasClientService
 
 <div class="page-layout">
-    <div class="top" style="background-color: #b6d029; display: flex; justify-content: center; align-items: center; position: relative;">
+    <div class="top" style="background-color: #AFB3A8; display: flex; justify-content: center; align-items: center; position: relative;">
         <div style="display: flex; flex-direction: row; gap: 10px; height: 50px;">
             <div class="factor-rect-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Rect) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Rect)'></div>   
             <div class="factor-circle-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Circle) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Circle)'></div>   
@@ -38,9 +38,11 @@
             <section class="left" style="padding: 0;">
                 @foreach (var page in _lecture.Pages)
                 {
+                    var imageUrl = string.IsNullOrEmpty(page.ThumbnailBase64) ? page.ImgUrl : page.ThumbnailBase64;
+
                     <div class="pdf-preview" style="background-color: @(_selectedPage == page ? "#b6d029" : "");" @onclick="() => SelectPage(page)">
                         <div style="width: 100%; padding: 2px; text-align: center;">
-                            <img src="@(page.ImgUrl)" loading="lazy" style="width: 80%;" />
+                            <img src="@(imageUrl)" loading="lazy" style="width: 80%;" />
                         </div>
                     </div>
                 }
@@ -170,6 +172,8 @@
     private bool _isPen = false;
     private SKTypeface customTypeface;
     private string _memberId = "";
+    private CancellationTokenSource? _textDebounceCts;
+    private int _thumbnailWidth = 300; // JS interop으로 초기화 전 기본값
 
     protected override async Task OnInitializedAsync()
     {
@@ -196,26 +200,35 @@
 
         _hubConnection.On<string, FactorData>("ReceiveDrawings", (user, factorData) => 
         {   
-            Console.WriteLine($"Guest가 Host로부터 {factorData.FactorDto.FactorType} 받음");
-            Console.WriteLine($"{factorData.FactorAction} 실행!!");
             var factor = FactorDto.FactorDtoToFactor(factorData.FactorDto);
             if (factor.FactorType is FactorType.Pen)
             {
                 var penfactor = (FactorPen)factor;
             }
 
+            var page = _lecture.Pages[factorData.PageIndex];
             switch (factorData.FactorAction)
             {
                 case "Add":
-                    _lecture.Pages[factorData.PageIndex].HostFactors.Add(factor);
-                    Console.WriteLine($"_lecture.Pages[factorData.PageIndex].HostFactors의 개수 : {_lecture.Pages[factorData.PageIndex].HostFactors.Count()}");
+                    page.HostFactors.Add(factor);
                     break;
                 case "Delete":
-                    _lecture.Pages[factorData.PageIndex].HostFactors.RemoveAt(factorData.FactorIndex);
+                    page.HostFactors.RemoveAt(factorData.FactorIndex);
                     break;
-                case "Update": 
-                    _lecture.Pages[factorData.PageIndex].HostFactors[factorData.FactorIndex] = factor;
+                case "Update":
+                case "End":
+                    page.HostFactors[factorData.FactorIndex] = factor;
                     break;
+            }
+
+            // "Update"(드래그 중)에는 썸네일을 갱신하지 않고,
+            // "Delete", "End"(마우스를 뗀 시점)에서만 스냅샷을 생성
+            // 펜 "Add" 시점에는 경로가 비어있으므로 스냅샷 불필요
+            var shouldSnapshot = factorData.FactorAction != "Update"
+                && !(factorData.FactorAction == "Add" && factor.FactorType == FactorType.Pen);
+            if (shouldSnapshot)
+            {
+                GenerateThumbnail(page);
             }
 
             InvokeAsync(StateHasChanged);
@@ -250,6 +263,15 @@
 
             // UI 렌더링 기회를 주기 위해 잠시 대기
             await Task.Delay(1);
+
+            // 화면 해상도에 맞는 썸네일 크기 계산 (사이드바 2/20 * 80% * DPR)
+            try
+            {
+                var windowWidth = await JSRuntime.InvokeAsync<double>("eval", "window.innerWidth");
+                var dpr = await JSRuntime.InvokeAsync<double>("eval", "window.devicePixelRatio || 1");
+                _thumbnailWidth = Math.Max(200, Math.Min(800, (int)(windowWidth * 0.10 * 0.80 * dpr)));
+            }
+            catch { /* 기본값 300 사용 */ }
 
             var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
             var count = 0;
@@ -332,6 +354,16 @@
                 drawingPageCount++;
             }
 
+            foreach (var page in _lecture.Pages)
+            {
+                Console.WriteLine($"#############page.HostFactors.Count() : {page.HostFactors.Count()}");
+                Console.WriteLine($"#############page.Factors.Count() : {page.Factors.Count()}");
+                if (page.HostFactors.Count() != 0 || page.Factors.Count() != 0)
+                {
+                    GenerateThumbnail(page);
+                    Console.WriteLine($"썸네일 추가됨!!");
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -648,17 +680,21 @@
         if (_isPen)
         {
             _penPoint = new();
-            if (_isPen)
+            if (role == "host")
             {
-                if (role == "host")
-                {
-                    var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-                    var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
 
-                    await Send(pageIndex, factorIndex, "Update", _factorPen);
-                }
+                await Send(pageIndex, factorIndex, "End", _factorPen);
             }
             _factorPen = null;
+        }
+        else if (_selectedFactor is not null && role == "host")
+        {
+            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
+            await Send(pageIndex, factorIndex, "End", _selectedFactor);
         }
     }
 
@@ -707,13 +743,29 @@
         {
             factorText.TextChanged(e.Value?.ToString() ?? string.Empty);
 
-
             if (role == "host")
             {
                 var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
+                // 실시간 동기화 (스냅샷 없이)
                 await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+
+                // 이전 디바운스 취소 후 500ms 뒤에 "End" 전송 (스냅샷 트리거)
+                _textDebounceCts?.Cancel();
+                _textDebounceCts = new CancellationTokenSource();
+                var cts = _textDebounceCts;
+                var factor = _selectedFactor;
+                _ = Task.Delay(500, cts.Token).ContinueWith(async t =>
+                {
+                    if (!t.IsCanceled)
+                    {
+                        await InvokeAsync(async () =>
+                        {
+                            await Send(pageIndex, factorIndex, "End", factor);
+                        });
+                    }
+                }, TaskScheduler.Current);
             }
         }
     }
@@ -730,7 +782,7 @@
                 var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
-                await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+                await Send(pageIndex, factorIndex, "End", _selectedFactor);
             }
         }
     }
@@ -754,7 +806,7 @@
                 var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
-                await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+                await Send(pageIndex, factorIndex, "End", _selectedFactor);
             }
         }
     }
@@ -862,8 +914,51 @@
                 await _hubConnection.SendAsync("SendDrawings", "shinwoo", factorData);
             }
         }
+
+        // Host의 썸네일은 ReceiveDrawings로 돌아오지 않으므로 직접 갱신
+        if (role == "host")
+        {
+            var shouldSnapshot = factorAction != "Update"
+                && !(factorAction == "Add" && factor.FactorType == FactorType.Pen);
+            if (shouldSnapshot && _lecture != null && pageIndex < _lecture.Pages.Count)
+            {
+                GenerateThumbnail(_lecture.Pages[pageIndex]);
+                StateHasChanged();
+            }
+        }
     }
-    private async Task FactorFill()
+
+    private void GenerateThumbnail(Page page)
+    {
+        if (page.Image == null) return;
+
+        var thumbScale = (float)_thumbnailWidth / page.Image.Width;
+        var thumbHeight = (int)(page.Image.Height * thumbScale);
+        var imageInfo = new SKImageInfo(_thumbnailWidth, thumbHeight);
+
+        using (var surface = SKSurface.Create(imageInfo))
+        {
+            var canvas = surface.Canvas;
+            canvas.Clear(SKColors.White);
+            canvas.Scale(thumbScale);
+
+            var rect = new SKRect(0, 0, page.Image.Width, page.Image.Height);
+            canvas.DrawImage(page.Image, rect);
+
+            if (page.HostFactors != null)
+                foreach (var f in page.HostFactors) f.Draw(canvas);
+
+            if (page.Factors != null)
+                foreach (var f in page.Factors) f.Draw(canvas);
+
+            using (var snapshotImage = surface.Snapshot())
+            using (var encodedData = snapshotImage.Encode(SKEncodedImageFormat.Jpeg, 80))
+            {
+                page.ThumbnailBase64 = $"data:image/jpeg;base64,{Convert.ToBase64String(encodedData.ToArray())}";
+            }
+        }
+    }
+private async Task FactorFill()
     {
         _selectedFactor.Paint.Style = _selectedFactor.Paint.Style == SKPaintStyle.Fill ? SKPaintStyle.Stroke : SKPaintStyle.Fill;
 
@@ -872,7 +967,7 @@
             var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
             var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
-            await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+            await Send(pageIndex, factorIndex, "End", _selectedFactor);
         }
     }
     private async Task DeleteFactor()

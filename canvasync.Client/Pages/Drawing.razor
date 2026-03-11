@@ -12,6 +12,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @page "/drawing/{role}/{lectureId}"
+@implements IAsyncDisposable
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
@@ -174,6 +175,9 @@
     private string _memberId = "";
     private CancellationTokenSource? _textDebounceCts;
     private int _thumbnailWidth = 300; // JS interop으로 초기화 전 기본값
+    // Host 전용: 저장하지 않은 변경사항 추적
+    private bool _hasUnsavedChanges = false;
+    private DotNetObjectReference<Drawing>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,6 +235,20 @@
                 GenerateThumbnail(page);
             }
 
+            InvokeAsync(StateHasChanged);
+        });
+
+        _hubConnection.On<string, int, List<FactorDto>>("PageRefreshed", (pageLectureId, pageIndex, factorDtos) =>
+        {
+            if (_lecture == null || pageLectureId != lectureId) return;
+            if (pageIndex < 0 || pageIndex >= _lecture.Pages.Count) return;
+
+            var page = _lecture.Pages[pageIndex];
+
+            // Host의 factor 목록을 서버에서 받은 것으로 교체
+            page.HostFactors = factorDtos.Select(dto => FactorDto.FactorDtoToFactor(dto)).ToList();
+
+            GenerateThumbnail(page);
             InvokeAsync(StateHasChanged);
         });
         
@@ -374,6 +392,10 @@
         {
             await _hubConnection.StartAsync();
             Console.WriteLine($"Hub 연결 성공");
+
+            // Undo/Redo 키보드 단축키 등록
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("registerUndoRedoHandler", _dotNetRef);
         }
         catch
         {
@@ -687,14 +709,27 @@
 
                 await Send(pageIndex, factorIndex, "End", _factorPen);
             }
+            else
+            {
+                // Guest: 펜 입력 완료 시 미저장 표시
+                await MarkUnsaved();
+            }
             _factorPen = null;
         }
-        else if (_selectedFactor is not null && role == "host")
+        else if (_selectedFactor is not null)
         {
-            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+            if (role == "host")
+            {
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
-            await Send(pageIndex, factorIndex, "End", _selectedFactor);
+                await Send(pageIndex, factorIndex, "End", _selectedFactor);
+            }
+            else
+            {
+                // Guest: 도형 이동/변형 완료 시 미저장 표시
+                await MarkUnsaved();
+            }
         }
     }
 
@@ -896,6 +931,14 @@
                 await Send(pageIndex, factorIndex, "Add", _selectedFactor);
             }
         }
+        else
+        {
+            // Guest: SendDrawings 없이 직접 추가하므로 여기서 미저장 표시
+            if (_selectedFactor is not null || _isPen)
+            {
+                await MarkUnsaved();
+            }
+        }
     }
 
     private async Task Send(int pageIndex, int factorIndex, string factorAction, Factor factor)
@@ -912,6 +955,7 @@
                 factorData.FactorDto = FactorDto.FactorToFactorDto(factor);
                 
                 await _hubConnection.SendAsync("SendDrawings", "shinwoo", factorData);
+                await MarkUnsaved();
             }
         }
 
@@ -979,6 +1023,10 @@ private async Task FactorFill()
 
             await Send(pageIndex, factorIndex, "Delete", _selectedFactor);
         }
+        else
+        {
+            await MarkUnsaved();
+        }
 
         _selectedPage.Factors.Remove(_selectedFactor);
         _selectedFactor = null;
@@ -991,6 +1039,16 @@ private async Task FactorFill()
         }
     }
 
+    // 미저장 상태로 전환 (최초 1회만 JS 등록)
+    private async Task MarkUnsaved()
+    {
+        if (!_hasUnsavedChanges)
+        {
+            _hasUnsavedChanges = true;
+            await JSRuntime.InvokeVoidAsync("enableBeforeUnloadWarning");
+        }
+    }
+
     private async Task Save()
     {
         // var drawings = PageDto.PagesToPageDtos(_lecture.Pages, onlyFactors : true);
@@ -998,6 +1056,10 @@ private async Task FactorFill()
         var drawingData = new DrawingData();
         drawingData.LectureId = lectureId;
         drawingData.MemberId = _memberId;
+
+        // 저장 완료 → 미저장 경고 해제
+        _hasUnsavedChanges = false;
+        await JSRuntime.InvokeVoidAsync("disableBeforeUnloadWarning");
 
         var drawings = new List<List<FactorDto>>();
         foreach (var page in _lecture.Pages)
@@ -1088,6 +1150,39 @@ private async Task FactorFill()
     {
         public int Width {get; set;}
         public int Height {get; set;}
+    }
+
+    [JSInvokable]
+    public async Task OnUndoKeyPressed()
+    {
+        if (_hubConnection is null || _hubConnection.State != HubConnectionState.Connected) return;
+        if (_selectedPage is null || _lecture is null) return;
+        if (role != "host") return;
+
+        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+        await _hubConnection.SendAsync("UndoDrawing", lectureId, pageIndex);
+    }
+
+    [JSInvokable]
+    public async Task OnRedoKeyPressed()
+    {
+        if (_hubConnection is null || _hubConnection.State != HubConnectionState.Connected) return;
+        if (_selectedPage is null || _lecture is null) return;
+        if (role != "host") return;
+
+        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+        await _hubConnection.SendAsync("RedoDrawing", lectureId, pageIndex);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // 컴포넌트가 사라질 때 beforeunload 핸들러 정리
+        await JSRuntime.InvokeVoidAsync("disableBeforeUnloadWarning");
+
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
     }
 }
 

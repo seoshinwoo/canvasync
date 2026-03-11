@@ -8,6 +8,7 @@ using Npgsql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using canvasync.Services;
 using canvasync.Library.Services;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,11 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddSignalR()
-    .AddMessagePackProtocol();
+    .AddMessagePackProtocol()
+    .AddStackExchangeRedis(builder.Configuration.GetConnectionString("Redis")!, options =>
+    {
+        options.Configuration.ChannelPrefix = RedisChannel.Literal("canvasync:");
+    });
 
 builder.Services.AddScoped<ICanvasService, CanvasService>();
 
@@ -39,11 +44,9 @@ builder.Services.AddResponseCompression(opts =>
 
 builder.Services.AddSingleton<StateContainer>();
 
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = builder.Configuration.GetConnectionString("Redis");
-    options.InstanceName = "canvasync:";
-});
+// IConnectionMultiplexer 등록 (Hash, SET 등 모든 Redis 기능에 사용)
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
 builder.Services.AddSingleton<IDrawingStorageService, RedisDrawingStorageService>();
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));

@@ -47,7 +47,11 @@ builder.Services.AddSingleton<StateContainer>();
 // IConnectionMultiplexer 등록 (Hash, SET 등 모든 Redis 기능에 사용)
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
-builder.Services.AddSingleton<IDrawingStorageService, RedisDrawingStorageService>();
+
+// L1(ConcurrentDictionary) + L2(Redis) 하이브리드 캐싱
+// RedisDrawingStorageService(L2)를 HybridDrawingStorageService가 감싸서 사용
+builder.Services.AddSingleton<RedisDrawingStorageService>();
+builder.Services.AddSingleton<IDrawingStorageService, HybridDrawingStorageService>();
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();

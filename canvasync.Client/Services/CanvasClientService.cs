@@ -17,44 +17,27 @@ public class CanvasClientService : ICanvasService
 
     public async Task AddLectureAsync(Lecture lecture, string memberId)
     {
-        // memberId 를 안전하게 보내기 위해서..
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/lecture/add-lecture");
-        request.Content = JsonContent.Create(lecture);
-        request.Headers.Add("X-Member-Id", memberId);
-
-        var response = await _httpClient.SendAsync(request);
+        // 쿠키 인증을 사용하므로 memberId 헤더 불필요 — 서버가 쿠키에서 자동 추출
+        var response = await _httpClient.PostAsJsonAsync("api/lecture/add-lecture", lecture);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task JoinLectureAsync(string lectureId, string memberId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"api/lecture/join-lecture/{lectureId}");
-        request.Headers.Add("X-Member-Id", memberId);
-
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.PostAsync($"api/lecture/join-lecture/{lectureId}", null);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task<List<Lecture>> GetMyLecturesAsync(string memberId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "api/lecture/my-lectures");
-        request.Headers.Add("X-Member-Id", memberId);
-
-        var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode(); 
-
-        return await response.Content.ReadFromJsonAsync<List<Lecture>>() ?? new List<Lecture>();
+        return await _httpClient.GetFromJsonAsync<List<Lecture>>("api/lecture/my-lectures")
+               ?? new List<Lecture>();
     }
     
     public async Task<List<Lecture>> GetJoinedLecturesAsync(string memberId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "api/lecture/joined-lectures");
-        request.Headers.Add("X-Member-Id", memberId);
-
-        var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode(); 
-
-        return await response.Content.ReadFromJsonAsync<List<Lecture>>() ?? new List<Lecture>();
+        return await _httpClient.GetFromJsonAsync<List<Lecture>>("api/lecture/joined-lectures")
+               ?? new List<Lecture>();
     }
 
     public async Task<Lecture?> GetLectureAsync(string lectureId)
@@ -87,10 +70,7 @@ public class CanvasClientService : ICanvasService
 
     public async Task LeaveLectureAsync(string lectureId, string memberId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"api/lecture/leave-lecture/{lectureId}");
-        request.Headers.Add("X-Member-Id", memberId);
-
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.PostAsync($"api/lecture/leave-lecture/{lectureId}", null);
         response.EnsureSuccessStatusCode();
     }
 

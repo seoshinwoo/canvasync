@@ -1,10 +1,12 @@
 using canvasync.Library.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace canvasync.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class DrawingDataController : ControllerBase
 {
     private readonly ICanvasService _canvasSerivce;

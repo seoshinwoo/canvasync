@@ -1,12 +1,16 @@
+using System.Security.Claims;
 using System.Text.Json;
 using canvasync.Library.Models;
 using canvasync.Library.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace canvasync.Controllers;
 
+// [Authorize]: 인증된 사용자만 접근 가능. 쿠키가 없거나 만료되면 401 반환.
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class LectureController : ControllerBase
 {
     private readonly ICanvasService _canvasService;
@@ -15,36 +19,36 @@ public class LectureController : ControllerBase
         _canvasService = canvasService;
     }
 
+    // 쿠키의 Claim에서 memberId를 꺼냄. 클라이언트가 위변조 불가능.
+    private string GetMemberId() =>
+        User.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? throw new UnauthorizedAccessException();
+
     [HttpPost("add-lecture")]
-    public async Task<IActionResult> AddLectureAsync(
-        [FromBody] Lecture lecture, [FromHeader(Name = "X-Member-Id")] string memberId)
+    public async Task<IActionResult> AddLectureAsync([FromBody] Lecture lecture)
     {
-        await _canvasService.AddLectureAsync(lecture, memberId);
+        await _canvasService.AddLectureAsync(lecture, GetMemberId());
         return Ok();
     }
 
     [HttpPost("join-lecture/{lectureId}")]
-    public async Task<IActionResult> JoinLectureAsync(
-        string lectureId, [FromHeader(Name = "X-Member-Id")] string memberId)
+    public async Task<IActionResult> JoinLectureAsync(string lectureId)
     {
-        await _canvasService.JoinLectureAsync(lectureId, memberId);
+        await _canvasService.JoinLectureAsync(lectureId, GetMemberId());
         return Ok();
     }
 
     [HttpGet("my-lectures")]
-    public async Task<IActionResult> GetMyLecturesAsync(
-        [FromHeader(Name = "X-Member-Id")] string memberId
-    )
+    public async Task<IActionResult> GetMyLecturesAsync()
     {
-        var lectures = await _canvasService.GetMyLecturesAsync(memberId);
+        var lectures = await _canvasService.GetMyLecturesAsync(GetMemberId());
         return Ok(lectures);
     }
 
     [HttpGet("joined-lectures")]
-    public async Task<IActionResult> GetJoinedLectures(
-        [FromHeader(Name = "X-Member-Id")] string memberId)
+    public async Task<IActionResult> GetJoinedLectures()
     {
-        var lectures = await _canvasService.GetJoinedLecturesAsync(memberId);
+        var lectures = await _canvasService.GetJoinedLecturesAsync(GetMemberId());
         return Ok(lectures);
     }
 
@@ -71,9 +75,9 @@ public class LectureController : ControllerBase
     }
 
     [HttpPost("leave-lecture/{lectureId}")]
-    public async Task<IActionResult> LeaveLecture(string lectureId, [FromHeader(Name = "X-Member-Id")] string memberId)
+    public async Task<IActionResult> LeaveLecture(string lectureId)
     {
-        await _canvasService.LeaveLectureAsync(lectureId, memberId);
+        await _canvasService.LeaveLectureAsync(lectureId, GetMemberId());
         return Ok();
     }
 

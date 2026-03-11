@@ -1,6 +1,6 @@
 
-
 using canvasync.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +8,7 @@ namespace canvasync.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PdfController : ControllerBase
 {
     private readonly IDbContextFactory<CanvasDbContext> _contextFactory;

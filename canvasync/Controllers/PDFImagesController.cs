@@ -4,6 +4,7 @@ using canvasync.Containers;
 using canvasync.Library.Dtos;
 using canvasync.Library.Models;
 using canvasync.Library.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.JSInterop;
 
@@ -11,6 +12,7 @@ namespace canvasync.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PDFImagesController : ControllerBase
 {
     private readonly StateContainer _stateContainer;
@@ -26,6 +28,7 @@ public class PDFImagesController : ControllerBase
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PagesController : ControllerBase
 {
     private readonly StateContainer _stateContainer;
@@ -41,6 +44,7 @@ public class PagesController : ControllerBase
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PDFDownloadController : ControllerBase
 {
     private readonly ICanvasService _canvasService;

@@ -55,7 +55,7 @@ public class AccountController : ControllerBase
         if (string.IsNullOrWhiteSpace(username) || username.Length > 50)
             return Redirect("/login?error=InvalidUsername");
 
-        if (string.IsNullOrWhiteSpace(password) || password.Length < 6 || password.Length > 100)
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 2 || password.Length > 100)
             return Redirect("/login?error=InvalidPassword");
 
         if (await _context.Members.AnyAsync(m => m.Name == username))

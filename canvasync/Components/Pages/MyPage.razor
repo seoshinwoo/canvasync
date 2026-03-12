@@ -11,28 +11,38 @@
 @inject ICanvasService CanvasService
 
 <div class="background-container">
+    <h2 class="page-title">My Page</h2>
+
     <div class="content-box">
         <div class="header">
-            <h3>My Page</h3>
-            <button class="btn-close" @onclick="GoToHome">×</button>
-        </div>
+            <div class="header-left">
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="header-profile">
+                            <div class="profile-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" fill="#21241B" class="bi bi-person-circle" viewBox="0 0 16 16">
+                                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                                    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                                </svg>
+                            </div>
 
-        <div class="profile-section">
-            <div class="profile-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="#21241B" class="bi bi-person-circle" viewBox="0 0 16 16">
-                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-                    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
-                </svg>
+                            <div class="user-info">
+                                <span class="user-name">@context.User.Identity?.Name</span>
+                            </div>
+                        </div>
+                    </Authorized>
+                </AuthorizeView>
             </div>
-            
-            <AuthorizeView>
-                <Authorized>
-                    <div class="user-info">
-                        <h2>@context.User.Identity?.Name</h2>
-                        <span class="role-badge">User</span>
-                    </div>
-                </Authorized>
-            </AuthorizeView>
+
+            <div class="header-actions">
+                <button class="header-action-button home-button" @onclick="GoToHome" aria-label="Go to home">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-house-door-fill" viewBox="0 0 16 16">
+                        <path d="M6.5 14.5v-4h3v4a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5V8.707a.5.5 0 0 0-.146-.354L8.354 3.146a.5.5 0 0 0-.708 0L2.146 8.354A.5.5 0 0 0 2 8.707V14.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5"/>
+                        <path d="M13 2.5v4l-2-2v-2a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5"/>
+                    </svg>
+                </button>
+                <button class="header-action-button logout-button" @onclick="Logout">Logout</button>
+            </div>
         </div>
 
         <div class="lists-section">
@@ -77,9 +87,6 @@
             </div>
         </div>
 
-        <div class="action-section">
-            <button class="btn-logout" @onclick="Logout">Logout</button>
-        </div>
     </div>
 </div>
 
@@ -87,20 +94,20 @@
 @code {
     private List<Lecture> MyLectures { get; set; } = new();
     private List<Lecture> JoinedLectures { get; set; } = new();
-    private string MemberId { get; set; } = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateTask;
-        var user = authState.User;
+        await base.OnInitializedAsync();
 
-        if (user.Identity?.IsAuthenticated == true)
+        if (string.IsNullOrEmpty(MemberId))
         {
-            MemberId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+            return;
         }
 
         MyLectures = await CanvasService.GetMyLecturesAsync(MemberId);
         JoinedLectures = await CanvasService.GetJoinedLecturesAsync(MemberId);
     }
+
     private void GoToHome()
     {
         NavigationManager.NavigateTo("/");
@@ -113,6 +120,11 @@
 
     private void OpenLecture(string lectureId, bool isMine)
     {
+        if (string.IsNullOrEmpty(MemberId))
+        {
+            return;
+        }
+
         if (isMine)
         {
             NavigationManager.NavigateTo($"/drawing/host/{lectureId}?memberId={MemberId}");
@@ -133,6 +145,11 @@
 
     private async Task LeaveLecture(string lectureId)
     {
+        if (string.IsNullOrEmpty(MemberId))
+        {
+            return;
+        }
+
         await CanvasService.LeaveLectureAsync(lectureId, MemberId);
         JoinedLectures.RemoveAll(l => l.Id == lectureId);
     }
@@ -164,9 +181,22 @@
         left: 0;
     }
 
+    .page-title {
+        position: absolute;
+        top: 12vh;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        color: white;
+        font-size: 2.2rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
     .content-box {
         background: white;
         width: 600px;
+        max-width: calc(100vw - 2rem);
         border-radius: 15px;
         padding: 2rem;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -179,72 +209,82 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 1rem;
         border-bottom: 1px solid #eee;
         padding-bottom: 1rem;
     }
 
-    .header h3 {
-        margin: 0;
-        color: #333;
-        font-weight: bold;
-    }
-
-    .btn-close {
-        background: none;
-        border: none;
-        font-size: 2rem;
-        line-height: 1;
-        cursor: pointer;
-        color: #999;
-    }
-
-    .btn-close:hover {
-        color: #333;
-    }
-
-    .profile-section {
+    .header-left {
         display: flex;
-        flex-direction: column;
         align-items: center;
         gap: 1rem;
+        min-width: 0;
+    }
+
+    .header-profile {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+    }
+
+    .profile-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
 
     .user-info {
-        text-align: center;
+        min-width: 0;
     }
 
-    .user-info h2 {
-        margin: 0 0 0.5rem 0;
+    .user-name {
+        display: block;
         color: #333;
+        font-size: 1.15rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .role-badge {
-        background-color: #b6d029;
-        color: #21241B;
-        padding: 4px 12px;
-        border-radius: 15px;
-        font-size: 0.9rem;
-        font-weight: bold;
-    }
-
-    .action-section {
+    .header-actions {
         display: flex;
-        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-left: auto;
     }
 
-    .btn-logout {
-        width: 100%;
-        padding: 12px;
+    .header-action-button {
+        border: none;
+        border-radius: 10px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .home-button {
+        width: 42px;
+        background-color: #f1f3ea;
+        color: #21241B;
+    }
+
+    .home-button:hover {
+        background-color: #dfe6c3;
+    }
+
+    .logout-button {
+        padding: 0 1rem;
         background-color: #dc3545;
         color: white;
-        border: none;
-        border-radius: 8px;
         font-weight: bold;
-        cursor: pointer;
-        transition: background-color 0.2s;
     }
 
-    .btn-logout:hover {
+    .logout-button:hover {
         background-color: #bb2d3b;
     }
 
@@ -264,7 +304,7 @@
 
     .list-group h4 {
         margin: 0 0 0.5rem 0;
-        font-size: 1rem;
+        font-size: 1.15rem;
         color: #555;
         font-weight: 600;
         text-align: center;
@@ -285,7 +325,7 @@
     .list-item {
         padding: 8px;
         border-bottom: 1px solid #eee;
-        font-size: 0.9rem;
+        font-size: 1rem;
         cursor: pointer;
         /* Ensure items are laid out correctly for clicking */
         display: flex;
@@ -313,5 +353,35 @@
     .scrollable-list::-webkit-scrollbar-thumb {
         background: #ccc;
         border-radius: 3px;
+    }
+
+    @@media (max-width: 768px) {
+        .page-title {
+            top: 10vh;
+            font-size: 1.8rem;
+        }
+
+        .content-box {
+            padding: 1.5rem;
+            gap: 1.5rem;
+        }
+
+        .header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .header-left {
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .header-actions {
+            justify-content: flex-end;
+        }
+
+        .lists-section {
+            flex-direction: column;
+        }
     }
 </style>

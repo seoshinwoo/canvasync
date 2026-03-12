@@ -19,17 +19,20 @@
 @inject ICanvasService CanvasClientService
 
 <div class="page-layout">
-    <div class="top" style="background-color: #AFB3A8; display: flex; justify-content: center; align-items: center; position: relative;">
-        <div style="display: flex; flex-direction: row; gap: 10px; height: 50px;">
-            <div class="factor-rect-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Rect) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Rect)'></div>   
-            <div class="factor-circle-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Circle) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Circle)'></div>   
-            <div class="factor-line-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Line) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Line)'></div>   
-            <div class="factor-text-icon hover-btn" style="background-color: @((_selectedFactor is not null && _selectedFactor.FactorType == FactorType.Text) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Text)'></div>   
-            <div class="factor-pen-icon hover-btn" style="background-color: @((_isPen) ? "grey" : "");" @onclick='() => AddFactor(FactorType.Pen)'></div>   
+    <div class="top">
+        <a class="drawing-brand" href="/">CanvaSync</a>
+
+        <div class="top-center">
+            <div class="drawing-tool factor-rect-icon hover-btn @(IsSelectedTool(FactorType.Rect) ? "active" : string.Empty)" @onclick='() => AddFactor(FactorType.Rect)'></div>
+            <div class="drawing-tool factor-circle-icon hover-btn @(IsSelectedTool(FactorType.Circle) ? "active" : string.Empty)" @onclick='() => AddFactor(FactorType.Circle)'></div>
+            <div class="drawing-tool factor-line-icon hover-btn @(IsSelectedTool(FactorType.Line) ? "active" : string.Empty)" @onclick='() => AddFactor(FactorType.Line)'></div>
+            <div class="drawing-tool factor-text-icon hover-btn @(IsSelectedTool(FactorType.Text) ? "active" : string.Empty)" @onclick='() => AddFactor(FactorType.Text)'></div>
+            <div class="drawing-tool factor-pen-icon hover-btn @(_isPen ? "active" : string.Empty)" @onclick='() => AddFactor(FactorType.Pen)'></div>
         </div>
-        <div class="button-group" style="position: absolute; right: 20px;">
-            <button class="btn-opt" style="background-color: #F87C63" @onclick="Save">Save</button>
-            <button class="btn-opt" style="background-color: #44CFCF" @onclick="Print">Print</button>
+
+        <div class="button-group drawing-actions">
+            <button class="drawing-action-button save-button" @onclick="Save">Save</button>
+            <button class="drawing-action-button print-button" @onclick="Print">Print</button>
         </div>
     </div>
 
@@ -188,12 +191,11 @@
             _memberId = val;
         }
 
-        var hubUri = $"/canvashub";
-
-        if (role == "host")
+        var hubUri = QueryHelpers.AddQueryString("/canvashub", new Dictionary<string, string?>
         {
-            hubUri += $"?lectureId={lectureId}&memberId={_memberId}";
-        }
+            ["lectureId"] = lectureId,
+            ["memberId"] = _memberId
+        });
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri(hubUri))
@@ -1174,6 +1176,11 @@ private async Task FactorFill()
         await _hubConnection.SendAsync("RedoDrawing", lectureId, pageIndex);
     }
 
+    private bool IsSelectedTool(FactorType factorType)
+    {
+        return _selectedFactor is not null && _selectedFactor.FactorType == factorType;
+    }
+
     public async ValueTask DisposeAsync()
     {
         // 컴포넌트가 사라질 때 beforeunload 핸들러 정리
@@ -1202,18 +1209,34 @@ private async Task FactorFill()
 }
 
 .top {
-    /* padding: 0.75rem 1rem; */
-    /* border-block: 1px solid #e7e7ea; */
-    display: flex;
-    justify-content: space-between; /* 왼쪽 h3, 오른쪽 버튼 그룹 */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     background-color: #b6d029;
-    padding: 8px;
+    gap: 1rem;
+    padding: 0.85rem 1.5rem;
+    min-height: 72px;
+    box-shadow: 0 1px 0 rgba(33, 36, 27, 0.12);
+}
+
+.drawing-brand {
+    color: #21241B;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    justify-self: start;
 }
 
 .top-center {
     display: flex;
     gap: 10px;
+    align-items: center;
+    justify-self: center;
+    padding: 0.35rem;
+    background: rgba(255, 255, 255, 0.28);
+    border: 1px solid rgba(33, 36, 27, 0.12);
+    border-radius: 16px;
 }
 
 .button-group {
@@ -1221,12 +1244,50 @@ private async Task FactorFill()
     gap: 8px; /* 버튼 사이 여백 */
 }
 
-.button-group button {
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 6px 12px;
+.drawing-actions {
+    justify-self: end;
+}
+
+.drawing-tool {
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    background-color: rgba(255, 255, 255, 0.78);
+    border-color: rgba(33, 36, 27, 0.2);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.drawing-tool.active {
+    background-color: rgba(33, 36, 27, 0.28);
+    border-color: #21241B;
+}
+
+.drawing-action-button {
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #21241B;
     cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.save-button {
+    background-color: #F87C63;
+}
+
+.print-button {
+    background-color: #44CFCF;
+}
+
+.drawing-action-button:hover,
+.drawing-tool:hover {
+    transform: translateY(-1px);
+}
+
+.drawing-action-button:hover {
+    opacity: 0.92;
 }
 
 /* 가운데 */
@@ -1298,8 +1359,25 @@ section.center > skcanvasview {
 }
 
 .hover-btn:hover {
-    background-color: grey;
     cursor: pointer; 
+}
+
+@@media (max-width: 960px) {
+    .top {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .drawing-brand,
+    .drawing-actions,
+    .top-center {
+        justify-self: center;
+    }
+
+    .top-center {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 
 .fixed-footer {

@@ -10,6 +10,7 @@ namespace Hubs;
 
 public class CanvasHub : Hub
 {
+    private const string LectureGroupPrefix = "lecture:";
     private readonly StateContainer _stateContainer;
     private readonly ICanvasService _canvasService;
     private readonly IDrawingStorageService _drawingStorage;
@@ -25,6 +26,8 @@ public class CanvasHub : Hub
         _drawingStorage = drawingStorage;
     }
 
+    private static string GetLectureGroupName(string lectureId) => $"{LectureGroupPrefix}{lectureId}";
+
     public override async Task OnConnectedAsync()
     {
         string connectionId = Context.ConnectionId;
@@ -36,6 +39,8 @@ public class CanvasHub : Hub
 
         if (!string.IsNullOrEmpty(lectureId))
         {
+            await Groups.AddToGroupAsync(connectionId, GetLectureGroupName(lectureId));
+
             var lecture = await _canvasService.GetLectureAsync(lectureId);
             bool isHost = lecture?.HostMember?.Id == memberId;
 
@@ -45,7 +50,10 @@ public class CanvasHub : Hub
 
             if (!await _drawingStorage.ContainsKeyAsync(lectureId))
             {
-                var drawingData = await _canvasService.GetDrawingDataAsync(lectureId, memberId);
+                var hostMemberId = lecture?.HostMember?.Id;
+                var drawingData = string.IsNullOrEmpty(hostMemberId)
+                    ? null
+                    : await _canvasService.GetDrawingDataAsync(lectureId, hostMemberId);
 
                 if (drawingData != null)
                 {
@@ -66,6 +74,8 @@ public class CanvasHub : Hub
         // Redis에서 connectionId → lectureId 조회
         var lectureId = await _drawingStorage.GetLectureIdByConnectionAsync(connectionId);
         if (lectureId is null) return;
+
+        await Groups.RemoveFromGroupAsync(connectionId, GetLectureGroupName(lectureId));
 
         // 해당 사용자 정보 조회
         var memberInfo = await _drawingStorage.GetMemberInfoAsync(lectureId, connectionId);
@@ -105,11 +115,13 @@ public class CanvasHub : Hub
     {
         Console.WriteLine($"Host가 Guest에게 {factorData.FactorDto.FactorType}을 방송");
 
+        var lectureGroupName = GetLectureGroupName(factorData.LectureId);
+
         // 브로드캐스트(A)와 상태 저장(B)은 서로 독립적 → 병렬 실행
         // A: 클라이언트 브로드캐스트는 factorData(불변 DTO)만 사용하므로 저장 완료를 기다릴 필요 없음
         // B: 페이지 상태 변경 + Redis 저장은 별도 파이프라인
         await Task.WhenAll(
-            Clients.Others.SendAsync("ReceiveDrawings", user, factorData),
+            Clients.OthersInGroup(lectureGroupName).SendAsync("ReceiveDrawings", user, factorData),
             PersistDrawingAsync(factorData)
         );
     }
@@ -189,7 +201,7 @@ public class CanvasHub : Hub
             );
 
             // lock 안에서 브로드캐스트: page 참조가 다른 스레드에 의해 변경되지 않음을 보장
-            await Clients.All.SendAsync("PageRefreshed", lectureId, pageIndex, page);
+            await Clients.Group(GetLectureGroupName(lectureId)).SendAsync("PageRefreshed", lectureId, pageIndex, page);
         }
         finally
         {
@@ -233,7 +245,7 @@ public class CanvasHub : Hub
                 _drawingStorage.PushHistoryAsync(lectureId, pageIndex, redoAction)
             );
 
-            await Clients.All.SendAsync("PageRefreshed", lectureId, pageIndex, page);
+            await Clients.Group(GetLectureGroupName(lectureId)).SendAsync("PageRefreshed", lectureId, pageIndex, page);
         }
         finally
         {

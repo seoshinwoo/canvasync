@@ -180,7 +180,6 @@
     private int _thumbnailWidth = 300; // JS interop으로 초기화 전 기본값
     // Host 전용: 저장하지 않은 변경사항 추적
     private bool _hasUnsavedChanges = false;
-    private DotNetObjectReference<Drawing>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -240,20 +239,7 @@
             InvokeAsync(StateHasChanged);
         });
 
-        _hubConnection.On<string, int, List<FactorDto>>("PageRefreshed", (pageLectureId, pageIndex, factorDtos) =>
-        {
-            if (_lecture == null || pageLectureId != lectureId) return;
-            if (pageIndex < 0 || pageIndex >= _lecture.Pages.Count) return;
 
-            var page = _lecture.Pages[pageIndex];
-
-            // Host의 factor 목록을 서버에서 받은 것으로 교체
-            page.HostFactors = factorDtos.Select(dto => FactorDto.FactorDtoToFactor(dto)).ToList();
-
-            GenerateThumbnail(page);
-            InvokeAsync(StateHasChanged);
-        });
-        
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -376,8 +362,6 @@
 
             foreach (var page in _lecture.Pages)
             {
-                Console.WriteLine($"#############page.HostFactors.Count() : {page.HostFactors.Count()}");
-                Console.WriteLine($"#############page.Factors.Count() : {page.Factors.Count()}");
                 if (page.HostFactors.Count() != 0 || page.Factors.Count() != 0)
                 {
                     GenerateThumbnail(page);
@@ -395,9 +379,6 @@
             await _hubConnection.StartAsync();
             Console.WriteLine($"Hub 연결 성공");
 
-            // Undo/Redo 키보드 단축키 등록
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JSRuntime.InvokeVoidAsync("registerUndoRedoHandler", _dotNetRef);
         }
         catch
         {
@@ -704,11 +685,11 @@
         if (_isPen)
         {
             _penPoint = new();
+            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
+
             if (role == "host")
             {
-                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-                var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
-
                 await Send(pageIndex, factorIndex, "End", _factorPen);
             }
             else
@@ -716,6 +697,7 @@
                 // Guest: 펜 입력 완료 시 미저장 표시
                 await MarkUnsaved();
             }
+
             _factorPen = null;
         }
         else if (_selectedFactor is not null)
@@ -732,6 +714,7 @@
                 // Guest: 도형 이동/변형 완료 시 미저장 표시
                 await MarkUnsaved();
             }
+
         }
     }
 
@@ -811,14 +794,14 @@
     {
         if(_selectedFactor is FactorText factorText)
         {
+            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
             factorText.TextSizeChanged();
 
 
             if (role == "host")
             {
-                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
-
                 await Send(pageIndex, factorIndex, "End", _selectedFactor);
             }
         }
@@ -829,6 +812,9 @@
         _selectedColor = e.Value?.ToString() ?? "#000000";
         if (!_isPen)
         {
+            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
             if (_selectedFactor is FactorText factorText)
             {
                 factorText.TextBlocks[0].Paint.Color = SKColor.Parse(_selectedColor);
@@ -840,9 +826,6 @@
 
             if (role == "host")
             {
-                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
-
                 await Send(pageIndex, factorIndex, "End", _selectedFactor);
             }
         }
@@ -1006,23 +989,25 @@
     }
 private async Task FactorFill()
     {
+        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+        var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
         _selectedFactor.Paint.Style = _selectedFactor.Paint.Style == SKPaintStyle.Fill ? SKPaintStyle.Stroke : SKPaintStyle.Fill;
 
         if (role == "host")
         {
-            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
-
             await Send(pageIndex, factorIndex, "End", _selectedFactor);
         }
     }
     private async Task DeleteFactor()
     {
+        if (_selectedFactor is null) return;
+
+        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+        var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
+
         if (role == "host")
         {
-            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
-
             await Send(pageIndex, factorIndex, "Delete", _selectedFactor);
         }
         else
@@ -1152,28 +1137,6 @@ private async Task FactorFill()
     {
         public int Width {get; set;}
         public int Height {get; set;}
-    }
-
-    [JSInvokable]
-    public async Task OnUndoKeyPressed()
-    {
-        if (_hubConnection is null || _hubConnection.State != HubConnectionState.Connected) return;
-        if (_selectedPage is null || _lecture is null) return;
-        if (role != "host") return;
-
-        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-        await _hubConnection.SendAsync("UndoDrawing", lectureId, pageIndex);
-    }
-
-    [JSInvokable]
-    public async Task OnRedoKeyPressed()
-    {
-        if (_hubConnection is null || _hubConnection.State != HubConnectionState.Connected) return;
-        if (_selectedPage is null || _lecture is null) return;
-        if (role != "host") return;
-
-        var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-        await _hubConnection.SendAsync("RedoDrawing", lectureId, pageIndex);
     }
 
     private bool IsSelectedTool(FactorType factorType)

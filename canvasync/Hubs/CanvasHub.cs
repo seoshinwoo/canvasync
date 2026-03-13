@@ -104,8 +104,6 @@ public class CanvasHub : Hub
 
             // Redis 데이터는 Guest용으로 2시간 더 유지 후 자동 만료
             await _drawingStorage.SetExpiryAsync(lectureId, TimeSpan.FromHours(2));
-            // 히스토리/Redo 스택 정리
-            await _drawingStorage.ClearHistoryAsync(lectureId);
             Console.WriteLine($"Host 퇴장 → 강의 [{lectureId}] Redis 데이터 2시간 후 자동 삭제 예정");
         }
         // Guest가 나갔을 때는 Redis 데이터를 건드리지 않음
@@ -138,12 +136,16 @@ public class CanvasHub : Hub
         await sem.WaitAsync();
         try
         {
-            // 페이지 확보 + 조회 (순차 - EnsurePage → GetPage 의존 관계)
-            await _drawingStorage.EnsurePageCountAsync(factorData.LectureId, factorData.PageIndex + 1);
+            var drawings = await _drawingStorage.GetAsync(factorData.LectureId)
+                           ?? new List<List<FactorDto>>();
 
-            var page = await _drawingStorage.GetPageAsync(factorData.LectureId, factorData.PageIndex)
-                       ?? new List<FactorDto>();
+            // 필요한 페이지 수만큼 확장
+            while (drawings.Count <= factorData.PageIndex)
+            {
+                drawings.Add(new List<FactorDto>());
+            }
 
+            var page = drawings[factorData.PageIndex];
             switch (factorData.FactorAction)
             {
                 case "Add":    page.Add(factorData.FactorDto); break;
@@ -152,12 +154,7 @@ public class CanvasHub : Hub
                 case "End":    page[factorData.FactorIndex] = factorData.FactorDto; break;
             }
 
-            // 저장, 히스토리 기록, Redo 초기화는 서로 독립적 → 병렬 실행
-            await Task.WhenAll(
-                _drawingStorage.SetPageAsync(factorData.LectureId, factorData.PageIndex, page),
-                _drawingStorage.PushHistoryAsync(factorData.LectureId, factorData.PageIndex, factorData),
-                _drawingStorage.ClearRedoAsync(factorData.LectureId, factorData.PageIndex)
-            );
+            await _drawingStorage.SetAsync(factorData.LectureId, drawings);
         }
         finally
         {
@@ -165,91 +162,4 @@ public class CanvasHub : Hub
         }
     }
 
-    public async Task UndoDrawing(string lectureId, int pageIndex)
-    {
-        var lockKey = $"{lectureId}:{pageIndex}";
-        var sem = _pageLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
-
-        await sem.WaitAsync();
-        try
-        {
-            var lastAction = await _drawingStorage.PopHistoryAsync(lectureId, pageIndex);
-            if (lastAction is null) return;
-
-            var page = await _drawingStorage.GetPageAsync(lectureId, pageIndex)
-                       ?? new List<FactorDto>();
-
-            switch (lastAction.FactorAction)
-            {
-                case "Add":
-                    if (page.Count > 0)
-                        page.RemoveAt(page.Count - 1);
-                    break;
-                case "Delete":
-                    if (lastAction.FactorIndex <= page.Count)
-                        page.Insert(lastAction.FactorIndex, lastAction.FactorDto);
-                    break;
-                case "Update":
-                case "End":
-                    break;
-            }
-
-            // 저장 + Redo 기록은 독립 → 병렬 실행
-            await Task.WhenAll(
-                _drawingStorage.SetPageAsync(lectureId, pageIndex, page),
-                _drawingStorage.PushRedoAsync(lectureId, pageIndex, lastAction)
-            );
-
-            // lock 안에서 브로드캐스트: page 참조가 다른 스레드에 의해 변경되지 않음을 보장
-            await Clients.Group(GetLectureGroupName(lectureId)).SendAsync("PageRefreshed", lectureId, pageIndex, page);
-        }
-        finally
-        {
-            sem.Release();
-        }
-    }
-
-    public async Task RedoDrawing(string lectureId, int pageIndex)
-    {
-        var lockKey = $"{lectureId}:{pageIndex}";
-        var sem = _pageLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
-
-        await sem.WaitAsync();
-        try
-        {
-            var redoAction = await _drawingStorage.PopRedoAsync(lectureId, pageIndex);
-            if (redoAction is null) return;
-
-            var page = await _drawingStorage.GetPageAsync(lectureId, pageIndex)
-                       ?? new List<FactorDto>();
-
-            switch (redoAction.FactorAction)
-            {
-                case "Add":
-                    page.Add(redoAction.FactorDto);
-                    break;
-                case "Delete":
-                    if (redoAction.FactorIndex < page.Count)
-                        page.RemoveAt(redoAction.FactorIndex);
-                    break;
-                case "Update":
-                case "End":
-                    if (redoAction.FactorIndex < page.Count)
-                        page[redoAction.FactorIndex] = redoAction.FactorDto;
-                    break;
-            }
-
-            // 저장 + 히스토리 기록은 독립 → 병렬 실행
-            await Task.WhenAll(
-                _drawingStorage.SetPageAsync(lectureId, pageIndex, page),
-                _drawingStorage.PushHistoryAsync(lectureId, pageIndex, redoAction)
-            );
-
-            await Clients.Group(GetLectureGroupName(lectureId)).SendAsync("PageRefreshed", lectureId, pageIndex, page);
-        }
-        finally
-        {
-            sem.Release();
-        }
-    }
 }

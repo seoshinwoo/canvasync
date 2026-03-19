@@ -23,29 +23,51 @@ public class AccountController : ControllerBase
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             return Redirect("/login?error=InvalidCredentials");
 
-        // 사용자 이름으로만 조회 (비밀번호는 해시이므로 DB에서 직접 비교 불가)
-        var user = await _context.Members.FirstOrDefaultAsync(m => m.Name == username);
-
-        // BCrypt.Verify: 입력된 평문 비밀번호가 DB의 해시와 일치하는지 검증
-        if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
-            return Redirect("/login?error=InvalidCredentials");
-
-        var claims = new List<Claim>
+        try 
         {
-            new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Role, "User")
-        };
+            // 사용자 이름으로만 조회 (비밀번호는 해시이므로 DB에서 직접 비교 불가)
+            var user = await _context.Members.FirstOrDefaultAsync(m => m.Name == username);
 
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var authProperties = new AuthenticationProperties { IsPersistent = true };
+            // 유저가 없는 경우 즉시 에러 파라미터와 함께 로그인 창으로 리다이렉트
+            if (user == null)
+                return Redirect("/login?error=InvalidCredentials");
 
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(claimsIdentity),
-            authProperties);
+            // 비밀번호 검증 중 예외(해시 형식이 아닌 평문 저장 등)가 발생할 수 있으므로 분리해서 처리
+            bool isPasswordValid = false;
+            try 
+            {
+                isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.Password);
+            }
+            catch 
+            {
+                isPasswordValid = false;
+            }
 
-        return Redirect("/"); 
+            if (!isPasswordValid)
+                return Redirect("/login?error=InvalidCredentials");
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Role, "User")
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties { IsPersistent = true };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
+
+            return Redirect("/"); 
+        }
+        catch (Exception)
+        {
+            // DB 연결 등 기타 예상치 못한 에러 발생 시에도 빈 화면 예외를 띄우지 않고 로그인 창에 안내
+            return Redirect("/login?error=InvalidCredentials");
+        }
     }
 
     [HttpPost("register")]

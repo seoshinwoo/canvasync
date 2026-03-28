@@ -328,6 +328,8 @@
             }
             
             var myDrawingData = await CanvasClientService.GetDrawingDataAsync(lectureId, _memberId); 
+            Console.WriteLine($"");
+
             if (myDrawingData?.Drawings != null)
             {
                 myDrawingDtos = myDrawingData.Drawings;
@@ -685,11 +687,11 @@
         if (_isPen)
         {
             _penPoint = new();
-            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
 
             if (role == "host")
             {
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_factorPen);
                 await Send(pageIndex, factorIndex, "End", _factorPen);
             }
             else
@@ -698,6 +700,7 @@
                 await MarkUnsaved();
             }
 
+            GenerateThumbnail(_selectedPage);
             _factorPen = null;
         }
         else if (_selectedFactor is not null)
@@ -706,7 +709,6 @@
             {
                 var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
                 var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
-
                 await Send(pageIndex, factorIndex, "End", _selectedFactor);
             }
             else
@@ -714,7 +716,7 @@
                 // Guest: 도형 이동/변형 완료 시 미저장 표시
                 await MarkUnsaved();
             }
-
+            GenerateThumbnail(_selectedPage);
         }
     }
 
@@ -762,31 +764,34 @@
         if(_selectedFactor is FactorText factorText)
         {
             factorText.TextChanged(e.Value?.ToString() ?? string.Empty);
+        
+            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
 
             if (role == "host")
             {
-                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
-
-                // 실시간 동기화 (스냅샷 없이)
                 await Send(pageIndex, factorIndex, "Update", _selectedFactor);
+            }
 
-                // 이전 디바운스 취소 후 500ms 뒤에 "End" 전송 (스냅샷 트리거)
-                _textDebounceCts?.Cancel();
-                _textDebounceCts = new CancellationTokenSource();
-                var cts = _textDebounceCts;
-                var factor = _selectedFactor;
-                _ = Task.Delay(500, cts.Token).ContinueWith(async t =>
+            // 이전 디바운스 취소 후 500ms 뒤에 "End" 전송 (스냅샷 트리거)
+            _textDebounceCts?.Cancel();
+            _textDebounceCts = new CancellationTokenSource();
+            var cts = _textDebounceCts;
+            var factor = _selectedFactor;
+            _ = Task.Delay(500, cts.Token).ContinueWith(async t =>
+            {
+                if (!t.IsCanceled)
                 {
-                    if (!t.IsCanceled)
+                    await InvokeAsync(async () =>
                     {
-                        await InvokeAsync(async () =>
+                        if (role == "host")
                         {
                             await Send(pageIndex, factorIndex, "End", factor);
-                        });
-                    }
-                }, TaskScheduler.Current);
-            }
+                        }
+                        GenerateThumbnail(_selectedPage);
+                    });
+                }
+            }, TaskScheduler.Current);
         }
     }
 
@@ -794,16 +799,16 @@
     {
         if(_selectedFactor is FactorText factorText)
         {
-            var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
-            var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
-
             factorText.TextSizeChanged();
-
 
             if (role == "host")
             {
+                var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
+                var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
                 await Send(pageIndex, factorIndex, "End", _selectedFactor);
             }
+
+            GenerateThumbnail(_selectedPage);
         }
     }
 
@@ -828,6 +833,8 @@
             {
                 await Send(pageIndex, factorIndex, "End", _selectedFactor);
             }
+
+            GenerateThumbnail(_selectedPage);
         }
     }
 
@@ -924,6 +931,8 @@
                 await MarkUnsaved();
             }
         }
+
+        if (_selectedFactor is not null) { GenerateThumbnail(_selectedPage);}
     }
 
     private async Task Send(int pageIndex, int factorIndex, string factorAction, Factor factor)
@@ -941,18 +950,6 @@
                 
                 await _hubConnection.SendAsync("SendDrawings", "shinwoo", factorData);
                 await MarkUnsaved();
-            }
-        }
-
-        // Host의 썸네일은 ReceiveDrawings로 돌아오지 않으므로 직접 갱신
-        if (role == "host")
-        {
-            var shouldSnapshot = factorAction != "Update"
-                && !(factorAction == "Add" && factor.FactorType == FactorType.Pen);
-            if (shouldSnapshot && _lecture != null && pageIndex < _lecture.Pages.Count)
-            {
-                GenerateThumbnail(_lecture.Pages[pageIndex]);
-                StateHasChanged();
             }
         }
     }
@@ -987,7 +984,7 @@
             }
         }
     }
-private async Task FactorFill()
+    private async Task FactorFill()
     {
         var pageIndex = _lecture.Pages.IndexOf(_selectedPage);
         var factorIndex = _selectedPage.Factors.IndexOf(_selectedFactor);
@@ -998,6 +995,8 @@ private async Task FactorFill()
         {
             await Send(pageIndex, factorIndex, "End", _selectedFactor);
         }
+
+        GenerateThumbnail(_selectedPage);
     }
     private async Task DeleteFactor()
     {
@@ -1017,6 +1016,8 @@ private async Task FactorFill()
 
         _selectedPage.Factors.Remove(_selectedFactor);
         _selectedFactor = null;
+
+        GenerateThumbnail(_selectedPage);
     }
     private void DeleteAll()
     {
@@ -1074,7 +1075,6 @@ private async Task FactorFill()
             using var content = new MultipartFormDataContent();
             var drawingsDtoJson = JsonSerializer.Serialize(drawingsDto);
             content.Add(new StringContent(drawingsDtoJson), "drawings");
-            // var response = await HttpClient.PostAsync($"http://localhost:5175/api/pdfdownload/make-pdf/{lectureId}", content);
             var response = await HttpClient.PostAsync(Navigation.ToAbsoluteUri($"api/pdfdownload/make-pdf/{lectureId}/{_memberId}"), content);
 
             if (response.IsSuccessStatusCode)

@@ -148,21 +148,38 @@ public class CanvasService : ICanvasService
 
     public async Task<DrawingData?> GetDrawingDataAsync(string lectureId, string memberId)
     {
-        var cachedDrawings = await _drawingStorage.GetAsync(lectureId);
-        if (cachedDrawings is not null)
-        {
-            Console.WriteLine($"Redis에서 가져옴!!");
-            var drawingData = new DrawingData();
-            drawingData.LectureId = lectureId;
-            drawingData.MemberId = memberId;
-            drawingData.Drawings = cachedDrawings;
+        using var context = await _factory.CreateDbContextAsync();
+        var lecture = await context.Lectures.Include(lect => lect.HostMember).Where(l => l.Id == lectureId).FirstOrDefaultAsync();
+        Console.WriteLine($"lectureId : {lectureId}");
+        var answer = lecture.HostMember == null ? "true" : "false";
+        Console.WriteLine($"lecture의 HostMember는 null 입니까..? : {answer}");
 
-            return drawingData;
+        if (lecture.HostMember.Id == memberId)
+        {
+            var cachedDrawings = await _drawingStorage.GetAsync(lectureId);
+            if (cachedDrawings is not null)
+            {
+                Console.WriteLine($"Redis에서 가져옴!!");
+                var drawingData = new DrawingData();
+                drawingData.LectureId = lectureId;
+                drawingData.MemberId = memberId;
+                drawingData.Drawings = cachedDrawings;
+
+                return drawingData;
+            }
+            else
+            {
+                Console.WriteLine($"DB에서 가져옴!!");
+                var drawingData = await context.DrawingData
+                    .Where(dd => dd.LectureId == lectureId && dd.MemberId == memberId)
+                    .FirstOrDefaultAsync();
+
+                return drawingData;
+            }
         }
         else
         {
             Console.WriteLine($"DB에서 가져옴!!");
-            using var context = await _factory.CreateDbContextAsync();
             var drawingData = await context.DrawingData
                 .Where(dd => dd.LectureId == lectureId && dd.MemberId == memberId)
                 .FirstOrDefaultAsync();

@@ -731,7 +731,7 @@
           "build/Microsoft.NET.ILLink.Tasks.props": {}
         }
       },
-      "Microsoft.NET.Sdk.WebAssembly.Pack/9.0.14": {
+      "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.5": {
         "type": "package",
         "build": {
           "build/Microsoft.NET.Sdk.WebAssembly.Pack.props": {},
@@ -1745,7 +1745,7 @@
           "build/Microsoft.NET.ILLink.Tasks.props": {}
         }
       },
-      "Microsoft.NET.Sdk.WebAssembly.Pack/9.0.14": {
+      "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.5": {
         "type": "package",
         "build": {
           "build/Microsoft.NET.Sdk.WebAssembly.Pack.props": {},
@@ -3076,16 +3076,15 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.NET.Sdk.WebAssembly.Pack/9.0.14": {
-      "sha512": "C69h2ZW0zQf5K389hwVP3oRccYvGaTueidbvsXXcjcLzpFG920Ut4DIF9OsE6AwxdxTGYumGF1kSjHT3VM6t/w==",
+    "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.5": {
+      "sha512": "377VBqkGr00cspqu3dQPtj+mbyIxTBJV40ZAMAIrZXj7M+R6BjRmFMyNvLbGZ+enrsaaQNEKOXxNEhioJmfB5Q==",
       "type": "package",
-      "path": "microsoft.net.sdk.webassembly.pack/9.0.14",
+      "path": "microsoft.net.sdk.webassembly.pack/10.0.5",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
-        "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
         "WasmAppHost/BrowserDebugHost.deps.json",
         "WasmAppHost/BrowserDebugHost.dll",
@@ -3110,12 +3109,12 @@
         "build/Microsoft.NET.Sdk.WebAssembly.Pack.targets",
         "build/Wasm.web.config",
         "build/browser.runtimeconfig.template.json",
-        "microsoft.net.sdk.webassembly.pack.9.0.14.nupkg.sha512",
+        "microsoft.net.sdk.webassembly.pack.10.0.5.nupkg.sha512",
         "microsoft.net.sdk.webassembly.pack.nuspec",
+        "tools/net10.0/Microsoft.NET.Sdk.WebAssembly.Pack.Tasks.dll",
+        "tools/net10.0/Microsoft.NET.WebAssembly.Webcil.dll",
         "tools/net472/Microsoft.NET.Sdk.WebAssembly.Pack.Tasks.dll",
-        "tools/net472/Microsoft.NET.WebAssembly.Webcil.dll",
-        "tools/net9.0/Microsoft.NET.Sdk.WebAssembly.Pack.Tasks.dll",
-        "tools/net9.0/Microsoft.NET.WebAssembly.Webcil.dll"
+        "tools/net472/Microsoft.NET.WebAssembly.Webcil.dll"
       ]
     },
     "Microsoft.NET.StringTools/17.6.3": {
@@ -3611,7 +3610,7 @@
       "Microsoft.AspNetCore.SignalR.Protocols.MessagePack >= 9.0.13",
       "Microsoft.AspNetCore.WebUtilities >= 9.0.0",
       "Microsoft.NET.ILLink.Tasks >= 9.0.14",
-      "Microsoft.NET.Sdk.WebAssembly.Pack >= 9.0.14",
+      "Microsoft.NET.Sdk.WebAssembly.Pack >= 10.0.5",
       "PDFsharp >= 6.2.2",
       "PDFtoImage >= 5.1.1",
       "SkiaSharp >= 3.119.0",
@@ -3620,19 +3619,19 @@
     ]
   },
   "packageFolders": {
-    "/Users/shinwoo/.nuget/packages/": {}
+    "/Users/seoshinwoo/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
+      "projectUniqueName": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
       "projectName": "canvasync.Client",
-      "projectPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
-      "packagesPath": "/Users/shinwoo/.nuget/packages/",
-      "outputPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/obj/",
+      "projectPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
+      "packagesPath": "/Users/seoshinwoo/.nuget/packages/",
+      "outputPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/shinwoo/.nuget/NuGet/NuGet.Config"
+        "/Users/seoshinwoo/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
@@ -3645,8 +3644,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj": {
-              "projectPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj"
+            "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj": {
+              "projectPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj"
             }
           }
         }
@@ -3661,7 +3660,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "10.0.200"
     },
     "frameworks": {
       "net9.0": {
@@ -3696,7 +3695,7 @@
           "Microsoft.NET.Sdk.WebAssembly.Pack": {
             "suppressParent": "All",
             "target": "Package",
-            "version": "[9.0.14, )",
+            "version": "[10.0.5, )",
             "autoReferenced": true
           },
           "PDFsharp": {
@@ -3732,7 +3731,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.312/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
       }
     },
     "runtimes": {

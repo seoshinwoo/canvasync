@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj": {}
+    "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj": {}
   },
   "projects": {
-    "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj": {
+    "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
+        "projectUniqueName": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
         "projectName": "canvasync.Client",
-        "projectPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
-        "packagesPath": "/Users/shinwoo/.nuget/packages/",
-        "outputPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Client/obj/",
+        "projectPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
+        "packagesPath": "/Users/seoshinwoo/.nuget/packages/",
+        "outputPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/shinwoo/.nuget/NuGet/NuGet.Config"
+          "/Users/seoshinwoo/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -27,8 +27,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj": {
-                "projectPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj"
+              "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj": {
+                "projectPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj"
               }
             }
           }
@@ -43,7 +43,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -78,7 +78,7 @@
             "Microsoft.NET.Sdk.WebAssembly.Pack": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[9.0.14, )",
+              "version": "[10.0.5, )",
               "autoReferenced": true
             },
             "PDFsharp": {
@@ -114,7 +114,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.312/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {
@@ -123,17 +123,17 @@
         }
       }
     },
-    "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj": {
+    "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj",
+        "projectUniqueName": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj",
         "projectName": "canvasync.Library",
-        "projectPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj",
-        "packagesPath": "/Users/shinwoo/.nuget/packages/",
-        "outputPath": "/Users/shinwoo/Documents/code/projects/canvasync/canvasync.Library/obj/",
+        "projectPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/canvasync.Library.csproj",
+        "packagesPath": "/Users/seoshinwoo/.nuget/packages/",
+        "outputPath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Library/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/shinwoo/.nuget/NuGet/NuGet.Config"
+          "/Users/seoshinwoo/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -158,7 +158,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -189,7 +189,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.312/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

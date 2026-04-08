@@ -27,11 +27,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddSignalR()
-    .AddMessagePackProtocol()
-    .AddStackExchangeRedis(builder.Configuration.GetConnectionString("Redis")!, options =>
-    {
-        options.Configuration.ChannelPrefix = RedisChannel.Literal("canvasync:");
-    });
+    .AddMessagePackProtocol();
 
 builder.Services.AddScoped<ICanvasService, CanvasService>();
 
@@ -44,14 +40,8 @@ builder.Services.AddResponseCompression(opts =>
 
 builder.Services.AddSingleton<StateContainer>();
 
-// IConnectionMultiplexer 등록 (Hash, SET 등 모든 Redis 기능에 사용)
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis")!));
-
-// L1(ConcurrentDictionary) + L2(Redis) 하이브리드 캐싱
-// RedisDrawingStorageService(L2)를 HybridDrawingStorageService가 감싸서 사용
-builder.Services.AddSingleton<RedisDrawingStorageService>();
-builder.Services.AddSingleton<IDrawingStorageService, HybridDrawingStorageService>();
+// 배포/테스트용: InMemory 캐싱
+builder.Services.AddSingleton<IDrawingStorageService, InMemoryDrawingStorageService>();
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();

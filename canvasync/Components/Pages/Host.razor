@@ -14,6 +14,8 @@
 @inject ICanvasService CanvasService
 
 <div class="dark-center-container">
+    <InputFile id="new-file-input" OnChange="HandleFileSelection" style="display: none;" />
+
     @if (!IsConverting)
     {
         <div class="header-text">Upload PDF</div>
@@ -21,8 +23,6 @@
         <label for="new-file-input" class="styled-btn">
             New File
         </label>
-
-        <InputFile id="new-file-input" OnChange="HandleFileSelection" style="display: none;" />
     }
     else if (!IsConvertingDone)
     {
@@ -79,6 +79,10 @@
 
         _imageUrls?.Clear();
         IsConverting = true;
+        // 상태 변경을 즉시 UI에 반영 (Converting.. 메시지 표시)
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(10); // UI가 화면에 "Converting.."을 그릴 수 있는 아주 짧은 시간을 줍니다.
+        
         var maxFileSize = 500 * 1024 * 1024;
 
         var file = e.File;
@@ -111,32 +115,7 @@
 
             try
             {
-                var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
-
                 _imageUrls = new List<string>();
-                var count = 0;
-
-                foreach (var img in images)
-                {
-                    var streamImage = new MemoryStream();
-                    img.Encode(streamImage, SkiaSharp.SKEncodedImageFormat.Png, 80);
-
-                    // Base64 문자열로 인코딩하여 Data URL 생성
-                    var base64String = Convert.ToBase64String(streamImage.ToArray());
-                    var dataUrl = $"data:image/png;base64, {base64String}";
-
-                    // _imageUrls.Add(dataUrl);
-                    var page = new Page();
-
-                    page.PageIndex = count;
-                    page.ImgUrl = dataUrl;
-                    page.Width = img.Width;
-                    page.Height = img.Height;
-
-                    _lecture.Pages.Add(page);
-
-                    count++;
-                }
             }
             catch (Exception ex)
             {
@@ -144,7 +123,6 @@
             }
             finally
             {
-                // IsConverting = false;
                 IsConvertingDone = true;
             }
         }

@@ -45,7 +45,13 @@ public class StateContainer
                         factor.Draw(canvas);
                     }
                 }
+                
+                // SKDocument에서 페이지 작성을 마침
+                document.EndPage();
             }
+
+            // PDF 작성 완료 (이걸 호출해야 최종 파일 구조가 완성됨)
+            document.Close();
         }
 
         return ms.ToArray();

@@ -88,7 +88,7 @@ public class PDFDownloadController : ControllerBase
         if (lecture.PdfFileBytes is not null)
         {
             var result = _stateContainer.MergePdfs(lecture.PdfFileBytes, overlayPdf);
-            var fileName = $"{lecture.FileName}_{member.Name}";
+            var fileName = $"{System.IO.Path.GetFileNameWithoutExtension(lecture.FileName)}_{member.Name}.pdf";
 
             return File(result, "application/pdf", fileName);
         }

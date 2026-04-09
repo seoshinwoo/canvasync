@@ -280,19 +280,26 @@
             catch { /* 기본값 300 사용 */ }
 
             var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
+
             var count = 0;
             foreach (var image in images)
             {
-                var streamImage = new MemoryStream();
-                image.Encode(streamImage, SkiaSharp.SKEncodedImageFormat.Png, 100);
+                using var streamImage = new MemoryStream();
+                // 1. PNG(품질 100)는 압축 연산이 매우 무겁습니다. Jpeg(품질 80)으로 변경하여 인코딩 속도 10배 이상 향상
+                image.Encode(streamImage, SkiaSharp.SKEncodedImageFormat.Jpeg, 80);
 
-                var base64String = Convert.ToBase64String(streamImage.ToArray());
-                var dataUrl = $"data:image/png;base64, {base64String}";
+                var imageBytes = streamImage.ToArray();
+                var base64String = Convert.ToBase64String(imageBytes);
+                var dataUrl = $"data:image/jpeg;base64,{base64String}";
 
                 var page = new Page();
                 page.PageIndex = count;
                 page.ImgUrl = dataUrl;
-                page.Image = LoadImageFromBase64(page.ImgUrl);
+                
+                // 2. Base64 문자열을 다시 바이트 배열로 파싱하는 비효율 제거 (가장 큰 병목)
+                // 방금 만든 imageBytes 배열을 활용해 즉시 SKImage 객체를 생성합니다.
+                page.Image = SKImage.FromEncodedData(new SKMemoryStream(imageBytes));
+
                 page.Width = image.Width;
                 page.Height = image.Height;
 
@@ -1068,7 +1075,14 @@
     private async Task Print()
     {
         var drawingsDto = new DrawingsDto();
-        drawingsDto.PageDtos = PageDto.PagesToPageDtos(_lecture.Pages);
+        var dtoList = PageDto.PagesToPageDtos(_lecture.Pages);
+        
+        // 전송 시 불필요한 이미지 데이터(수십 MB)로 인한 Form 용량 초과 에러 방지를 위해 비움
+        foreach (var dto in dtoList)
+        {
+            dto.ImgData = string.Empty;
+        }
+        drawingsDto.PageDtos = dtoList;
 
         try
         {
@@ -1080,7 +1094,13 @@
             if (response.IsSuccessStatusCode)
             {
                 var fileName = response.Content.Headers.ContentDisposition?.FileName ?? "download.pdf";
+                
+                // ContentDisposition.FileName 에 포함된 앞뒤 큰따옴표 제거 -> 파일명 끝에 자꾸 '_' 가 붙음..
+                fileName = fileName.Trim('"');
+                
                 var fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+                Console.WriteLine($"fileName : {fileName}");
 
                 await JSRuntime.InvokeVoidAsync("PdfFileDownload", fileName, fileBytes);
             }

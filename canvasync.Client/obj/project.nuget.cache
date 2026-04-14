@@ -1,9 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "c+vDoXzjhj4=",
+  "dgSpecHash": "MT1siXErfSs=",
   "success": true,
   "projectFilePath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
   "expectedPackageFiles": [
+    "/Users/seoshinwoo/.nuget/packages/azure.core/1.50.0/azure.core.1.50.0.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/azure.storage.blobs/12.27.0/azure.storage.blobs.12.27.0.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/azure.storage.common/12.26.0/azure.storage.common.12.26.0.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/bblanchon.pdfium.linux/139.0.7215/bblanchon.pdfium.linux.139.0.7215.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/bblanchon.pdfium.macos/139.0.7215/bblanchon.pdfium.macos.139.0.7215.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/bblanchon.pdfium.win32/139.0.7215/bblanchon.pdfium.win32.139.0.7215.nupkg.sha512",
@@ -26,6 +29,7 @@
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.signalr.protocols.json/9.0.9/microsoft.aspnetcore.signalr.protocols.json.9.0.9.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.signalr.protocols.messagepack/9.0.13/microsoft.aspnetcore.signalr.protocols.messagepack.9.0.13.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.aspnetcore.webutilities/9.0.0/microsoft.aspnetcore.webutilities.9.0.0.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/microsoft.bcl.asyncinterfaces/8.0.0/microsoft.bcl.asyncinterfaces.8.0.0.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.extensions.configuration/9.0.6/microsoft.extensions.configuration.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.extensions.configuration.abstractions/9.0.6/microsoft.extensions.configuration.abstractions.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.extensions.configuration.binder/9.0.6/microsoft.extensions.configuration.binder.9.0.6.nupkg.sha512",
@@ -56,6 +60,9 @@
     "/Users/seoshinwoo/.nuget/packages/skiasharp.nativeassets.win32/3.119.0/skiasharp.nativeassets.win32.3.119.0.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/skiasharp.views.blazor/3.119.0/skiasharp.views.blazor.3.119.0.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/sungaila.pdfium.blazorwebassembly/134.0.6982/sungaila.pdfium.blazorwebassembly.134.0.6982.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/system.clientmodel/1.8.0/system.clientmodel.1.8.0.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/system.io.hashing/10.0.1/system.io.hashing.10.0.1.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/system.memory.data/8.0.1/system.memory.data.8.0.1.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/system.net.serversentevents/9.0.9/system.net.serversentevents.9.0.9.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/system.security.cryptography.pkcs/8.0.1/system.security.cryptography.pkcs.8.0.1.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/system.threading.channels/9.0.9/system.threading.channels.9.0.9.nupkg.sha512"

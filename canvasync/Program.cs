@@ -9,14 +9,20 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using canvasync.Services;
 using canvasync.Library.Services;
 using StackExchange.Redis;
+using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("ServerAPI", client =>
 {
-    // client.BaseAddress = new Uri("https://localhost:5175"); // 서버 주소 고정
-    client.BaseAddress = new Uri("https://canvasync.azurewebsites.net"); // 서버 주소 고정
+    if (builder.Environment.IsDevelopment())
+    {
+        client.BaseAddress = new Uri("https://localhost:5175"); // 로컬 개발 서버 주소
+    }
+    else
+    {
+        client.BaseAddress = new Uri("https://canvasync.azurewebsites.net"); // 배포 서버 주소
+    }
 });
 
 builder.Services.AddControllers();
@@ -40,8 +46,23 @@ builder.Services.AddResponseCompression(opts =>
 
 builder.Services.AddSingleton<StateContainer>();
 
-// 배포/테스트용: InMemory 캐싱
-builder.Services.AddSingleton<IDrawingStorageService, InMemoryDrawingStorageService>();
+if (builder.Environment.IsDevelopment())
+{
+    // 로컬 환경: Redis 캐싱
+    var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
+    builder.Services.AddSingleton<IDrawingStorageService, RedisDrawingStorageService>();
+}
+else
+{
+    // 배포 환경: InMemory 캐싱
+    builder.Services.AddSingleton<IDrawingStorageService, InMemoryDrawingStorageService>();
+}
+
+string azureConnectionString = builder.Configuration.GetConnectionString("AzureStorage");
+
+// 이를 통해 BlobServiceClient 등을 등록
+builder.Services.AddSingleton(x => new BlobServiceClient(azureConnectionString));
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();

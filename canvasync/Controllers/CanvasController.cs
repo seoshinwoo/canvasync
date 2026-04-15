@@ -27,6 +27,11 @@ public class LectureController : ControllerBase
     [HttpPost("add-lecture")]
     public async Task<IActionResult> AddLectureAsync([FromBody] Lecture lecture)
     {
+        if (lecture == null || string.IsNullOrWhiteSpace(lecture.PdfFileAddress))
+        {
+            return BadRequest("PdfFileAddress is required.");
+        }
+
         await _canvasService.AddLectureAsync(lecture, GetMemberId());
         return Ok();
     }

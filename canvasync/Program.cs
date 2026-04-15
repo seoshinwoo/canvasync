@@ -59,10 +59,19 @@ else
     builder.Services.AddSingleton<IDrawingStorageService, InMemoryDrawingStorageService>();
 }
 
-string azureConnectionString = builder.Configuration.GetConnectionString("AzureStorage");
+var azureConnectionString = builder.Configuration.GetConnectionString("AzureStorage");
 
-// 이를 통해 BlobServiceClient 등을 등록
-builder.Services.AddSingleton(x => new BlobServiceClient(azureConnectionString));
+// Blob 서비스는 실제 사용 시점에 연결 문자열 유효성을 검사합니다.
+builder.Services.AddSingleton(_ =>
+{
+    if (string.IsNullOrWhiteSpace(azureConnectionString))
+    {
+        throw new InvalidOperationException("ConnectionStrings:AzureStorage is not configured.");
+    }
+
+    return new BlobServiceClient(azureConnectionString);
+});
+builder.Services.AddSingleton<IPdfBlobStorageService, AzureBlobPdfStorageService>();
 
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();
@@ -83,6 +92,14 @@ builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
+
+// Keep runtime DB schema in sync to avoid model/column mismatches.
+using (var scope = app.Services.CreateScope())
+{
+    var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<CanvasDbContext>>();
+    await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+    await dbContext.Database.MigrateAsync();
+}
 
 if (!app.Environment.IsDevelopment())
 {

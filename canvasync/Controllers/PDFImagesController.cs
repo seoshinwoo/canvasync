@@ -4,6 +4,7 @@ using canvasync.Containers;
 using canvasync.Library.Dtos;
 using canvasync.Library.Models;
 using canvasync.Library.Services;
+using canvasync.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.JSInterop;
@@ -49,22 +50,32 @@ public class PDFDownloadController : ControllerBase
 {
     private readonly ICanvasService _canvasService;
     private readonly StateContainer _stateContainer;
-    public PDFDownloadController(StateContainer stateContainer, ICanvasService canvasService)
+    private readonly IPdfBlobStorageService _pdfBlobStorageService;
+
+    public PDFDownloadController(
+        StateContainer stateContainer,
+        ICanvasService canvasService,
+        IPdfBlobStorageService pdfBlobStorageService)
     {
         _stateContainer = stateContainer;
         _canvasService = canvasService;
+        _pdfBlobStorageService = pdfBlobStorageService;
     }
 
     [HttpPost("make-pdf/{lectureId}/{memberId}")]
     public async Task<IActionResult> MakePDF(string lectureId, string memberId)
     {
-        var maxFileSize = 500 * 1024 * 1024;
         var form = await Request.ReadFormAsync();
         var lecture = await _canvasService.GetLectureAsync(lectureId);
         var member = await _canvasService.GetMemberAsync(memberId);
 
-        var pdfFile = lecture.PdfFileBytes;
-        if (pdfFile == null || pdfFile.Count() == 0)
+        if (lecture == null || string.IsNullOrWhiteSpace(lecture.PdfFileAddress))
+        {
+            return BadRequest("PDF file not found.");
+        }
+
+        var pdfFile = await _pdfBlobStorageService.DownloadPdfAsync(lecture.PdfFileAddress);
+        if (pdfFile == null || pdfFile.Length == 0)
         {
             return BadRequest("PDF file not found.");
         }
@@ -85,16 +96,9 @@ public class PDFDownloadController : ControllerBase
         // 오버레이할 PDF 생성
         byte[] overlayPdf = _stateContainer.CreateOverlayPdf(drawingsDto);
 
-        if (lecture.PdfFileBytes is not null)
-        {
-            var result = _stateContainer.MergePdfs(lecture.PdfFileBytes, overlayPdf);
-            var fileName = $"{System.IO.Path.GetFileNameWithoutExtension(lecture.FileName)}_{member.Name}.pdf";
+        var result = _stateContainer.MergePdfs(pdfFile, overlayPdf);
+        var fileName = $"{System.IO.Path.GetFileNameWithoutExtension(lecture.FileName)}_{member.Name}.pdf";
 
-            return File(result, "application/pdf", fileName);
-        }
-        else
-        {
-            return BadRequest("Invalid drawing data");
-        }
+        return File(result, "application/pdf", fileName);
     }
 }

@@ -7,6 +7,7 @@
 @using canvasync.Data
 @using canvasync.Library.Models
 @using canvasync.Library.Services
+@using canvasync.Services
 @inject Containers.StateContainer StateContainer
 @inject NavigationManager NavigationManager
 @inject IWebHostEnvironment WebHostEnvironment
@@ -55,8 +56,8 @@
     private List<string> _imageUrls = new();
     private bool IsConverting = false;
     private bool IsConvertingDone = false;
-    [Inject] IWebHostEnvironment hostEnvironment { get; set; }
-    private Type? currentComponent;
+    [Inject] IWebHostEnvironment hostEnvironment { get; set; } = default!;
+    [Inject] private IPdfBlobStorageService PdfBlobStorageService { get; set; } = default!;
     private Lecture? _lecture;
     protected override async Task OnInitializedAsync()
     {
@@ -87,47 +88,39 @@
 
         var file = e.File;
         _fileName = file.Name;
-
-        var pdfFile = e.File;
         if (file.Size > maxFileSize)
         {
             return;
         }
 
-        if (pdfFile is not null)
+        if (file is not null)
         {
-            using (var ms = new MemoryStream())
-            {
-                try
-                {
-                    await pdfFile.OpenReadStream(maxFileSize).CopyToAsync(ms);
-                    _lecture.PdfFileBytes = ms.ToArray();
-                }
-                 catch (JSDisconnectedException)
-                {
-                    Console.WriteLine("File upload was canceld by the user.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"{ex}, An unexpected error occured during file upload");
-                }
-            }
-
             try
             {
+                await using var stream = file.OpenReadStream(maxFileSize);
+                _lecture.PdfFileAddress = await PdfBlobStorageService.UploadLecturePdfAsync(
+                    _lecture.Id,
+                    _lecture.FileName,
+                    stream,
+                    file.ContentType);
+
                 _imageUrls = new List<string>();
+                IsConvertingDone = true;
+                StateContainer.Lectures.Add(_lecture);
+            }
+            catch (JSDisconnectedException)
+            {
+                Console.WriteLine("File upload was canceled by the user.");
+                IsConverting = false;
+                IsConvertingDone = false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"파일 변환 중 오류 발생 : {ex.Message}");
-            }
-            finally
-            {
-                IsConvertingDone = true;
+                Console.WriteLine($"{ex}, An unexpected error occurred during file upload");
+                IsConverting = false;
+                IsConvertingDone = false;
             }
         }
-
-        StateContainer.Lectures.Add(_lecture);
     }
 
     private void SelectNewFile()
@@ -139,6 +132,12 @@
 
     private async Task StartPresentation()
     {
+        if (_lecture is null || string.IsNullOrWhiteSpace(_lecture.PdfFileAddress))
+        {
+            Console.WriteLine("PDF upload is not completed.");
+            return;
+        }
+
         var authState = await AuthenticationStateTask;
         var user = authState.User;
         string memberId = String.Empty; 

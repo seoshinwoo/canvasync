@@ -8,5 +8,5 @@ public class LectureDto
     public string Id { get; set; }
     public string Code { get; set; }
     public string FileName { get; set; }
-    public byte[]? PdfFileBytes { get; set; }
+    public string? PdfFileAddress { get; set; }
 }

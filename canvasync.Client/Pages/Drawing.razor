@@ -279,7 +279,21 @@
             }
             catch { /* 기본값 300 사용 */ }
 
-            var images = PDFtoImage.Conversion.ToImages(_lecture.PdfFileBytes);
+            var pdfResponse = await HttpClient.GetAsync(Navigation.ToAbsoluteUri($"api/pdf/get-filebytes/{lectureId}"));
+            if (!pdfResponse.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"PDF download failed. Status: {pdfResponse.StatusCode}");
+                return;
+            }
+
+            var pdfBytes = await pdfResponse.Content.ReadAsByteArrayAsync();
+            if (pdfBytes.Length == 0)
+            {
+                Console.WriteLine("Downloaded PDF is empty.");
+                return;
+            }
+
+            var images = PDFtoImage.Conversion.ToImages(pdfBytes);
 
             var count = 0;
             foreach (var image in images)

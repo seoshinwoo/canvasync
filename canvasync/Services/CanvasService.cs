@@ -10,11 +10,16 @@ public class CanvasService : ICanvasService
 {
     private readonly IDbContextFactory<CanvasDbContext> _factory;
     private readonly IDrawingStorageService _drawingStorage;
+    private readonly IPdfBlobStorageService _pdfBlobStorageService;
 
-    public CanvasService(IDbContextFactory<CanvasDbContext> factory, IDrawingStorageService drawingStorage)
+    public CanvasService(
+        IDbContextFactory<CanvasDbContext> factory,
+        IDrawingStorageService drawingStorage,
+        IPdfBlobStorageService pdfBlobStorageService)
     {
         _factory = factory;
         _drawingStorage = drawingStorage;
+        _pdfBlobStorageService = pdfBlobStorageService;
     }
 
     // Lecture 추가
@@ -113,6 +118,7 @@ public class CanvasService : ICanvasService
         var lecture = await context.Lectures.FindAsync(lectureId);
         if (lecture != null)
         {
+            await _pdfBlobStorageService.DeletePdfAsync(lecture.PdfFileAddress);
             context.Lectures.Remove(lecture);
             await context.SaveChangesAsync();
         }

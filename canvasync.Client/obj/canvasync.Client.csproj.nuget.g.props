@@ -17,12 +17,12 @@
     <Import Project="$(NuGetPackageRoot)skiasharp.nativeassets.webassembly/3.119.0/buildTransitive/netstandard1.0/SkiaSharp.NativeAssets.WebAssembly.props" Condition="Exists('$(NuGetPackageRoot)skiasharp.nativeassets.webassembly/3.119.0/buildTransitive/netstandard1.0/SkiaSharp.NativeAssets.WebAssembly.props')" />
     <Import Project="$(NuGetPackageRoot)skiasharp.views.blazor/3.119.0/buildTransitive/SkiaSharp.Views.Blazor.props" Condition="Exists('$(NuGetPackageRoot)skiasharp.views.blazor/3.119.0/buildTransitive/SkiaSharp.Views.Blazor.props')" />
     <Import Project="$(NuGetPackageRoot)pdftoimage/5.1.1/buildTransitive/net9.0/PDFtoImage.props" Condition="Exists('$(NuGetPackageRoot)pdftoimage/5.1.1/buildTransitive/net9.0/PDFtoImage.props')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.net.sdk.webassembly.pack/10.0.5/build/Microsoft.NET.Sdk.WebAssembly.Pack.props" Condition="Exists('$(NuGetPackageRoot)microsoft.net.sdk.webassembly.pack/10.0.5/build/Microsoft.NET.Sdk.WebAssembly.Pack.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.net.sdk.webassembly.pack/10.0.7/build/Microsoft.NET.Sdk.WebAssembly.Pack.props" Condition="Exists('$(NuGetPackageRoot)microsoft.net.sdk.webassembly.pack/10.0.7/build/Microsoft.NET.Sdk.WebAssembly.Pack.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.net.illink.tasks/9.0.14/build/Microsoft.NET.ILLink.Tasks.props" Condition="Exists('$(NuGetPackageRoot)microsoft.net.illink.tasks/9.0.14/build/Microsoft.NET.ILLink.Tasks.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.components.webassembly/9.0.6/build/net9.0/Microsoft.AspNetCore.Components.WebAssembly.props" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.components.webassembly/9.0.6/build/net9.0/Microsoft.AspNetCore.Components.WebAssembly.props')" />
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <PkgMicrosoft_NET_Sdk_WebAssembly_Pack Condition=" '$(PkgMicrosoft_NET_Sdk_WebAssembly_Pack)' == '' ">/Users/seoshinwoo/.nuget/packages/microsoft.net.sdk.webassembly.pack/10.0.5</PkgMicrosoft_NET_Sdk_WebAssembly_Pack>
+    <PkgMicrosoft_NET_Sdk_WebAssembly_Pack Condition=" '$(PkgMicrosoft_NET_Sdk_WebAssembly_Pack)' == '' ">/Users/seoshinwoo/.nuget/packages/microsoft.net.sdk.webassembly.pack/10.0.7</PkgMicrosoft_NET_Sdk_WebAssembly_Pack>
     <PkgMicrosoft_NET_ILLink_Tasks Condition=" '$(PkgMicrosoft_NET_ILLink_Tasks)' == '' ">/Users/seoshinwoo/.nuget/packages/microsoft.net.illink.tasks/9.0.14</PkgMicrosoft_NET_ILLink_Tasks>
   </PropertyGroup>
 </Project>

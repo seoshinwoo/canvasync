@@ -796,7 +796,7 @@
           "build/Microsoft.NET.ILLink.Tasks.props": {}
         }
       },
-      "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.5": {
+      "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.7": {
         "type": "package",
         "build": {
           "build/Microsoft.NET.Sdk.WebAssembly.Pack.props": {},
@@ -1925,7 +1925,7 @@
           "build/Microsoft.NET.ILLink.Tasks.props": {}
         }
       },
-      "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.5": {
+      "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.7": {
         "type": "package",
         "build": {
           "build/Microsoft.NET.Sdk.WebAssembly.Pack.props": {},
@@ -3394,10 +3394,10 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.5": {
-      "sha512": "377VBqkGr00cspqu3dQPtj+mbyIxTBJV40ZAMAIrZXj7M+R6BjRmFMyNvLbGZ+enrsaaQNEKOXxNEhioJmfB5Q==",
+    "Microsoft.NET.Sdk.WebAssembly.Pack/10.0.7": {
+      "sha512": "FXBvIwh/CAORqmO75qTy+mnTUuIYidOdNHYhMky0yLcsK6DNFBIP+eeiglhMggtatUSCnAzrCqb1EdwvZq+KAg==",
       "type": "package",
-      "path": "microsoft.net.sdk.webassembly.pack/10.0.5",
+      "path": "microsoft.net.sdk.webassembly.pack/10.0.7",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
@@ -3427,7 +3427,7 @@
         "build/Microsoft.NET.Sdk.WebAssembly.Pack.targets",
         "build/Wasm.web.config",
         "build/browser.runtimeconfig.template.json",
-        "microsoft.net.sdk.webassembly.pack.10.0.5.nupkg.sha512",
+        "microsoft.net.sdk.webassembly.pack.10.0.7.nupkg.sha512",
         "microsoft.net.sdk.webassembly.pack.nuspec",
         "tools/net10.0/Microsoft.NET.Sdk.WebAssembly.Pack.Tasks.dll",
         "tools/net10.0/Microsoft.NET.WebAssembly.Webcil.dll",
@@ -4009,7 +4009,7 @@
       "Microsoft.AspNetCore.SignalR.Protocols.MessagePack >= 9.0.13",
       "Microsoft.AspNetCore.WebUtilities >= 9.0.0",
       "Microsoft.NET.ILLink.Tasks >= 9.0.14",
-      "Microsoft.NET.Sdk.WebAssembly.Pack >= 10.0.5",
+      "Microsoft.NET.Sdk.WebAssembly.Pack >= 10.0.7",
       "PDFsharp >= 6.2.2",
       "PDFtoImage >= 5.1.1",
       "SkiaSharp >= 3.119.0",
@@ -4098,7 +4098,7 @@
           "Microsoft.NET.Sdk.WebAssembly.Pack": {
             "suppressParent": "All",
             "target": "Package",
-            "version": "[10.0.5, )",
+            "version": "[10.0.7, )",
             "autoReferenced": true
           },
           "PDFsharp": {
@@ -4129,6 +4129,12 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[9.0.15, 9.0.15]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"

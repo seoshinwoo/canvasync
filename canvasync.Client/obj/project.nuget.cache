@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "MT1siXErfSs=",
+  "dgSpecHash": "9cGA8/LNmJU=",
   "success": true,
   "projectFilePath": "/Users/seoshinwoo/Documents/code/projects/canvasync/canvasync.Client/canvasync.Client.csproj",
   "expectedPackageFiles": [
@@ -49,7 +49,7 @@
     "/Users/seoshinwoo/.nuget/packages/microsoft.jsinterop.webassembly/9.0.6/microsoft.jsinterop.webassembly.9.0.6.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.net.http.headers/9.0.0/microsoft.net.http.headers.9.0.0.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.net.illink.tasks/9.0.14/microsoft.net.illink.tasks.9.0.14.nupkg.sha512",
-    "/Users/seoshinwoo/.nuget/packages/microsoft.net.sdk.webassembly.pack/10.0.5/microsoft.net.sdk.webassembly.pack.10.0.5.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/microsoft.net.sdk.webassembly.pack/10.0.7/microsoft.net.sdk.webassembly.pack.10.0.7.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/microsoft.net.stringtools/17.6.3/microsoft.net.stringtools.17.6.3.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/pdfsharp/6.2.2/pdfsharp.6.2.2.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/pdftoimage/5.1.1/pdftoimage.5.1.1.nupkg.sha512",
@@ -65,7 +65,8 @@
     "/Users/seoshinwoo/.nuget/packages/system.memory.data/8.0.1/system.memory.data.8.0.1.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/system.net.serversentevents/9.0.9/system.net.serversentevents.9.0.9.nupkg.sha512",
     "/Users/seoshinwoo/.nuget/packages/system.security.cryptography.pkcs/8.0.1/system.security.cryptography.pkcs.8.0.1.nupkg.sha512",
-    "/Users/seoshinwoo/.nuget/packages/system.threading.channels/9.0.9/system.threading.channels.9.0.9.nupkg.sha512"
+    "/Users/seoshinwoo/.nuget/packages/system.threading.channels/9.0.9/system.threading.channels.9.0.9.nupkg.sha512",
+    "/Users/seoshinwoo/.nuget/packages/microsoft.netcore.app.ref/9.0.15/microsoft.netcore.app.ref.9.0.15.nupkg.sha512"
   ],
   "logs": []
 }

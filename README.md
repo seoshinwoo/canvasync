@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="1916" height="821" alt="CanvaSync" src="docs/images/canvasync-banner.png" />
+<img width="1915" height="821" alt="CanvaSync" src="docs/images/canvasync-banner.png" />
 
 # CanvaSync
 

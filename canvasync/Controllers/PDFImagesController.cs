@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices.Marshalling;
+using System.Security.Claims;
 using System.Text.Json;
 using canvasync.Containers;
 using canvasync.Library.Dtos;
@@ -62,14 +63,25 @@ public class PDFDownloadController : ControllerBase
         _pdfBlobStorageService = pdfBlobStorageService;
     }
 
+    private string GetMemberId() =>
+        User.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? throw new UnauthorizedAccessException();
+
     [HttpPost("make-pdf/{lectureId}/{memberId}")]
     public async Task<IActionResult> MakePDF(string lectureId, string memberId)
     {
+        // memberId route segment is kept for client compatibility; ownership comes from the auth claim.
+        var authenticatedMemberId = GetMemberId();
+        if (!await _canvasService.CanAccessLectureAsync(lectureId, authenticatedMemberId))
+        {
+            return Forbid();
+        }
+
         var form = await Request.ReadFormAsync();
         var lecture = await _canvasService.GetLectureAsync(lectureId);
-        var member = await _canvasService.GetMemberAsync(memberId);
+        var member = await _canvasService.GetMemberAsync(authenticatedMemberId);
 
-        if (lecture == null || string.IsNullOrWhiteSpace(lecture.PdfFileAddress))
+        if (lecture == null || member == null || string.IsNullOrWhiteSpace(lecture.PdfFileAddress))
         {
             return BadRequest("PDF file not found.");
         }

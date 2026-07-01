@@ -5,6 +5,7 @@ using System.Security.Claims;
 using canvasync.Library.Models;
 using canvasync.Data;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 [Route("[controller]")]
 [ApiController]
@@ -17,6 +18,17 @@ public class AccountController : ControllerBase
         _context = context;
     }
 
+    private static bool IsUniqueViolation(DbUpdateException exception, string constraintName)
+    {
+        if (exception.InnerException is not PostgresException postgresException)
+        {
+            return false;
+        }
+
+        return postgresException.SqlState == PostgresErrorCodes.UniqueViolation
+            && postgresException.ConstraintName == constraintName;
+    }
+
     [HttpPost("login")]    
     public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password)
     {
@@ -26,7 +38,9 @@ public class AccountController : ControllerBase
         try 
         {
             // 사용자 이름으로만 조회 (비밀번호는 해시이므로 DB에서 직접 비교 불가)
-            var user = await _context.Members.FirstOrDefaultAsync(m => m.Name == username);
+            var user = await _context.Members
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Name == username);
 
             // 유저가 없는 경우 즉시 에러 파라미터와 함께 로그인 창으로 리다이렉트
             if (user == null)
@@ -91,7 +105,14 @@ public class AccountController : ControllerBase
         };
         
         _context.Members.Add(newMember);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex, "IX_Members_Name"))
+        {
+            return Redirect("/login?error=UsernameExists");
+        }
         
         return await Login(username, password);
     }

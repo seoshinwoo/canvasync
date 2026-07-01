@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using canvasync.Library.Models;
-using System.Text.Json;
-using canvasync.Library.Dtos;
 
 namespace canvasync.Data;
 public class CanvasDbContext : DbContext
@@ -17,9 +15,56 @@ public class CanvasDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // DrawingData 엔티티에 대한 설정을 시작합니다.
-        modelBuilder.Entity<DrawingData>()
-            .Property(d => d.Drawings)
-            .HasColumnType("jsonb");
+        modelBuilder.Entity<Member>(entity =>
+        {
+            entity.Property(m => m.Name)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(m => m.Password)
+                .IsRequired();
+
+            entity.HasIndex(m => m.Name)
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<Lecture>(entity =>
+        {
+            entity.Property(l => l.Code)
+                .IsRequired()
+                .HasMaxLength(6);
+
+            entity.Property(l => l.FileName)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.HasIndex(l => l.Code)
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<DrawingData>(entity =>
+        {
+            entity.Property(d => d.LectureId)
+                .IsRequired();
+
+            entity.Property(d => d.MemberId)
+                .IsRequired();
+
+            entity.Property(d => d.Drawings)
+                .HasColumnType("jsonb");
+
+            entity.HasIndex(d => new { d.LectureId, d.MemberId })
+                .IsUnique();
+
+            entity.HasOne(d => d.Lecture)
+                .WithMany()
+                .HasForeignKey(d => d.LectureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Member)
+                .WithMany()
+                .HasForeignKey(d => d.MemberId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

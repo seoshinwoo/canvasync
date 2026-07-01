@@ -88,7 +88,22 @@ public class CanvasClientService : ICanvasService
         throw new NotImplementedException();
     }
 
-    public Task<Member> GetMemberAsync(string memberId)
+    public Task<Member?> GetMemberAsync(string memberId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> CanAccessLectureAsync(string lectureId, string memberId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> CanReadDrawingDataAsync(string lectureId, string requestedMemberId, string authenticatedMemberId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> IsLectureHostAsync(string lectureId, string memberId)
     {
         throw new NotImplementedException();
     }

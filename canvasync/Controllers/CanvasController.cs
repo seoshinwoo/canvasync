@@ -60,6 +60,11 @@ public class LectureController : ControllerBase
     [HttpGet("get-lecture/{lectureId}")]
     public async Task<IActionResult> GetLectureAsync(string lectureId)
     {
+        if (!await _canvasService.CanAccessLectureAsync(lectureId, GetMemberId()))
+        {
+            return Forbid();
+        }
+
         var lecture = await _canvasService.GetLectureAsync(lectureId);
 
         return Ok(lecture);
@@ -68,6 +73,14 @@ public class LectureController : ControllerBase
     [HttpPost("save-drawingdata")]
     public async Task<IActionResult> SaveDrawingData([FromBody] DrawingData drawingData)
     {
+        var memberId = GetMemberId();
+
+        if (!await _canvasService.CanAccessLectureAsync(drawingData.LectureId, memberId))
+        {
+            return Forbid();
+        }
+
+        drawingData.MemberId = memberId;
         await _canvasService.SaveDrawingDataAsync(drawingData);
         return Ok();
     }
@@ -75,6 +88,11 @@ public class LectureController : ControllerBase
     [HttpDelete("{lectureId}")]
     public async Task<IActionResult> DeleteLecture(string lectureId)
     {
+        if (!await _canvasService.IsLectureHostAsync(lectureId, GetMemberId()))
+        {
+            return Forbid();
+        }
+
         await _canvasService.DeleteLectureAsync(lectureId);
         return Ok();
     }
@@ -91,7 +109,12 @@ public class LectureController : ControllerBase
     {
         try
         {
-            string lectureId = data.GetProperty("LectureId").GetString();
+            string? lectureId = data.GetProperty("LectureId").GetString();
+            if (string.IsNullOrWhiteSpace(lectureId))
+            {
+                return BadRequest("LectureId is required.");
+            }
+
             bool inProgress = data.GetProperty("InProgress").GetBoolean();
 
             return Ok(new { success = true });

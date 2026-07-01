@@ -5,9 +5,12 @@ using canvasync.Library.Dtos;
 using canvasync.Containers;
 using canvasync.Library.Services;
 using canvasync.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Hubs;
 
+[Authorize]
 public class CanvasHub : Hub
 {
     private const string LectureGroupPrefix = "lecture:";
@@ -35,17 +38,24 @@ public class CanvasHub : Hub
         var httpContext = Context.GetHttpContext();
 
         var lectureId = httpContext?.Request.Query["lectureId"].ToString();
-        var memberId = httpContext?.Request.Query["memberId"].ToString();
+        var queryMemberId = httpContext?.Request.Query["memberId"].ToString();
+        var memberId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? queryMemberId;
 
-        if (!string.IsNullOrEmpty(lectureId))
+        if (!string.IsNullOrEmpty(lectureId) && !string.IsNullOrEmpty(memberId))
         {
+            if (!await _canvasService.CanAccessLectureAsync(lectureId, memberId))
+            {
+                Context.Abort();
+                return;
+            }
+
             await Groups.AddToGroupAsync(connectionId, GetLectureGroupName(lectureId));
 
             var lecture = await _canvasService.GetLectureAsync(lectureId);
             bool isHost = lecture?.HostMember?.Id == memberId;
 
             // Redis SET에 접속자 등록 + connectionId → lectureId 매핑 저장
-            await _drawingStorage.AddMemberAsync(lectureId, connectionId, isHost, memberId ?? string.Empty);
+            await _drawingStorage.AddMemberAsync(lectureId, connectionId, isHost, memberId);
             await _drawingStorage.SetConnectionMappingAsync(connectionId, lectureId);
 
             if (!await _drawingStorage.ContainsKeyAsync(lectureId))

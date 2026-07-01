@@ -9,6 +9,7 @@
 <p>
   <img src="https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet" alt=".NET 9" />
   <img src="https://img.shields.io/badge/Blazor-WebAssembly-512BD4?logo=blazor" alt="Blazor WebAssembly" />
+  <img src="https://img.shields.io/badge/SkiaSharp-Drawing-88C540" alt="SkiaSharp Drawing" />
   <img src="https://img.shields.io/badge/SignalR-MessagePack-0C7CD5" alt="SignalR MessagePack" />
   <img src="https://img.shields.io/badge/PostgreSQL-JSONB-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL JSONB" />
   <img src="https://img.shields.io/badge/Redis-Cache-DC382D?logo=redis&logoColor=white" alt="Redis Cache" />
@@ -117,7 +118,7 @@ PostgreSQL 스키마에는 `Members.Name`, `Lectures.Code`, `DrawingData(Lecture
 | 영역 | 기술 |
 | --- | --- |
 | Frontend | Blazor WebAssembly, Blazor Server, Razor Components |
-| Drawing | SkiaSharp, SkiaSharp.Views.Blazor |
+| Drawing | Skia, SkiaSharp, SkiaSharp.Views.Blazor |
 | Realtime | ASP.NET Core SignalR, MessagePack |
 | Backend | ASP.NET Core 9, Entity Framework Core 9 |
 | Database | PostgreSQL, Npgsql, JSONB |

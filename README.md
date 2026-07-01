@@ -1,15 +1,25 @@
+<div align="center">
+
+<img width="1916" height="821" alt="CanvaSync" src="docs/images/canvasync-banner.png" />
+
 # CanvaSync
 
-> 교수자의 PDF 필기를 학생들에게 실시간으로 동기화하는 웹 기반 협업 필기 도구
+### 교수자의 PDF 필기를 학생들에게 실시간으로 동기화하는 웹 기반 협업 필기 도구
 
-![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)
-![Blazor](https://img.shields.io/badge/Blazor-WebAssembly-512BD4?logo=blazor)
-![SignalR](https://img.shields.io/badge/SignalR-MessagePack-0C7CD5)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-JSONB-4169E1?logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?logo=redis&logoColor=white)
-![Azure](https://img.shields.io/badge/Azure-Blob_Storage-0078D4?logo=microsoftazure)
+<p>
+  <img src="https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet" alt=".NET 9" />
+  <img src="https://img.shields.io/badge/Blazor-WebAssembly-512BD4?logo=blazor" alt="Blazor WebAssembly" />
+  <img src="https://img.shields.io/badge/SignalR-MessagePack-0C7CD5" alt="SignalR MessagePack" />
+  <img src="https://img.shields.io/badge/PostgreSQL-JSONB-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL JSONB" />
+  <img src="https://img.shields.io/badge/Redis-Cache-DC382D?logo=redis&logoColor=white" alt="Redis Cache" />
+  <img src="https://img.shields.io/badge/Azure-Blob_Storage-0078D4?logo=microsoftazure" alt="Azure Blob Storage" />
+</p>
 
 CanvaSync는 학생들이 판서를 옮겨 적느라 수업 내용을 놓치는 문제를 줄이기 위해 만든 졸업작품입니다. 교수자가 PDF 위에 도형, 텍스트, 펜 필기를 추가하면 같은 강의방에 접속한 학생 화면에 변경 내용이 실시간으로 반영됩니다. 학생은 교수자의 필기와 별개로 자신의 개인 필기를 작성하고, 두 필기를 합친 PDF를 내려받을 수 있습니다.
+
+</div>
+
+---
 
 ## 주요 기능
 

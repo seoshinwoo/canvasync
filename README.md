@@ -78,12 +78,13 @@ PDF 원본은 필기 데이터와 분리해 보관하고, 다운로드할 때 �
 
 ---
 
-## 🧩 시스템 구성
+## 🧩 시스템 구조
 
 <!-- GitHub에 구조도 이미지를 업로드한 뒤 아래 URL을 교체해 추가하세요.
 <div align="center">
-  <img width="1000" alt="CanvaSync 시스템 구성도" src="https://github.com/user-attachments/assets/IMAGE_ID" />
+  <img width="1600" height="900" alt="canvasync_archi" src="https://github.com/user-attachments/assets/d67a5f56-96c5-4eea-8357-e669aeb032c6" />
 </div>
+
 -->
 
 교수자와 학생은 같은 웹 애플리케이션을 사용하며, 일반 요청과 실시간 필기 이벤트는 각각 API와 SignalR Hub가 처리합니다. 강의 정보와 저장된 필기, 진행 중인 필기, PDF 원본은 성격에 맞는 저장소로 나누어 관리합니다.
